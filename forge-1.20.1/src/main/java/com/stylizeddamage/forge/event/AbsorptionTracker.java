@@ -73,8 +73,8 @@ public final class AbsorptionTracker {
         final float diff = currentAbsorption - lastAbsorption;
         lastAbsorption = currentAbsorption;
 
-        // No change — nothing to report
-        if (diff == 0.0F) {
+        // Only fire for increases (absorption gained), ignore decreases
+        if (diff <= 0.0F) {
             return;
         }
 

@@ -7,7 +7,7 @@ license="MIT License"
 
 [[mods]]
 modId="stylizeddamage"
-version="1.0.0"
+version="1201.1.0"
 displayName="StylizedDamage"
 authors="Yanbwe"
 description='''
@@ -26,6 +26,6 @@ rainbow effects, easing curves, and total damage tracking.
 [[dependencies.stylizeddamage]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.20.1,1.21)"
+    versionRange="[1.20.1,1.20.5)"
     ordering="NONE"
     side="BOTH"
