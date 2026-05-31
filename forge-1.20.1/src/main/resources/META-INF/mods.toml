@@ -1,0 +1,31 @@
+# StylizedDamage — Forge 1.20.1 mod metadata
+# See https://docs.minecraftforge.net/en/latest/gettingstarted/structuring/#the-modstoml-file
+
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT License"
+
+[[mods]]
+modId="stylizeddamage"
+version="1.0.0"
+displayName="StylizedDamage"
+authors="Yanbwe"
+description='''
+A highly customizable damage number display mod with style system.
+Supports animated floating damage numbers, colour gradients,
+rainbow effects, easing curves, and total damage tracking.
+'''
+
+[[dependencies.stylizeddamage]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.stylizeddamage]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,1.21)"
+    ordering="NONE"
+    side="BOTH"

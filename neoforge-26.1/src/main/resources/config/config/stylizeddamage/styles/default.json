@@ -1,0 +1,54 @@
+{
+  "color": "#FFFFFF",
+  "fontSize": 1.0,
+  "fontStyle": "bold",
+  "shadow": true,
+  "outlineColor": "#333333",
+  "animation": {
+    "hold": 6,
+    "position": {
+      "enter": {
+        "type": "normal",
+        "duration": 8,
+        "easing": { "in": true, "out": true },
+        "startOffset": { "type": "direction", "angle": -90, "distance": 12 },
+        "targetOffset": { "type": "xy", "x": 0, "y": 0 }
+      },
+      "exit": { "type": "none" }
+    },
+    "size": {
+      "enter": {
+        "type": "normal",
+        "duration": 6,
+        "easing": { "in": true, "out": true },
+        "startOffset": 0.3,
+        "targetOffset": 0
+      },
+      "exit": {
+        "type": "normal",
+        "duration": 10,
+        "easing": { "in": true, "out": true },
+        "targetOffset": -0.5
+      }
+    },
+    "brightness": {
+      "enter": { "type": "none" },
+      "exit": { "type": "none" }
+    },
+    "opacity": {
+      "enter": {
+        "type": "normal",
+        "duration": 4,
+        "easing": { "in": true, "out": true },
+        "startOpacity": 0,
+        "targetOpacity": 1
+      },
+      "exit": {
+        "type": "normal",
+        "duration": 12,
+        "easing": { "in": true, "out": true },
+        "targetOpacity": 0
+      }
+    }
+  }
+}

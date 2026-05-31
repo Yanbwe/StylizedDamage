@@ -1,0 +1,52 @@
+{
+  "selectors": {
+    "common": {
+      "common": [
+        { "match": ["*"], "style": "default" }
+      ]
+    }
+  },
+  "displayFilter": {
+    "mode": "byTarget",
+    "hideSelfDamage": true,
+    "bySource": {
+      "player":    { "sameTeam": false, "otherTeam": false },
+      "mob":       { "hostile": false, "passive": false },
+      "other":     false
+    },
+    "byTarget": {
+      "player":    { "sameTeam": true, "otherTeam": true },
+      "mob":       { "hostile": true, "passive": true },
+      "other":     true
+    }
+  },
+  "minDamageDisplay": 0.1,
+  "maxActiveNumbers": 999,
+  "showHealing": true,
+  "showAbsorption": true,
+  "distanceScaleSegment": 10.0,
+  "distanceScaleFactor": 0.2,
+  "distanceScaleMin": 0.3,
+  "maxDisplayDistance": 64.0,
+  "totalDamage": {
+    "enabled": false,
+    "resetTimeout": 100,
+    "maxTrailCount": 5,
+    "baseFontSize": 3.0,
+    "sizeOffsetPerThousand": 0.5,
+    "sizeOffsetMax": 6.0,
+    "selectors": {
+      "common": { "style": "total" },
+      "[100,...]": { "style": "total_high" },
+      "[1000,...]": { "style": "total_insane" }
+    },
+    "positionX": 0.0,
+    "positionY": 0.0,
+    "enableEntryAnimation": true,
+    "enableExitAnimation": true,
+    "enableBounceAnimation": true,
+    "enableTrailEntryAnimation": true,
+    "enableTrailExitAnimation": true,
+    "bounceScalePeak": 1.4
+  }
+}

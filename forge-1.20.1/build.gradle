@@ -1,0 +1,58 @@
+// Forge 1.20.1 platform module — Groovy DSL for ForgeGradle 6.x compatibility.
+plugins {
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'org.spongepowered.mixin' version '0.7.+'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+minecraft {
+    mappings channel: project.property('mapping_channel') as String,
+             version: project.property('minecraft_version_1_20_1') as String
+
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+        }
+        client {}
+        server {}
+    }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${project.property('minecraft_version_1_20_1')}-${project.property('forge_version')}"
+    implementation project(':common')
+}
+
+mixin {
+    add sourceSets.main, "${project.property('mod_id')}.refmap.json"
+}
+
+// Bundle common module classes into the mod jar
+jar {
+    from(project(':common').sourceSets.main.output) {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+}
+
+// Copy common classes into forge build directory for dev runtime visibility
+tasks.register('copyCommonClasses', Copy) {
+    from project(':common').sourceSets.main.output
+    into layout.buildDirectory.dir('classes/java/main')
+}
+
+tasks.named('compileJava').configure {
+    finalizedBy 'copyCommonClasses'
+}
+
+tasks.named('jar').configure {
+    dependsOn 'copyCommonClasses'
+}

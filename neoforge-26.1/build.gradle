@@ -1,0 +1,22 @@
+// NeoForge 26.1 platform module — matches CheapAway reference pattern.
+plugins {
+    id 'net.neoforged.moddev' version '2.0.+'
+}
+
+neoForge {
+    version = "26.1.0.1-beta"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+dependencies {
+    implementation project(':common')
+}
+
+jar {
+    from(project(':common').sourceSets.main.output) {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+}

@@ -1,0 +1,41 @@
+# NeoForge 1.21.1 mod metadata for StylizedDamage.
+# For NeoForge moddev plugin, the file must be named "neoforge.mods.toml".
+
+modLoader = "javafml"
+loaderVersion = "[2,)"
+license = "MIT"
+
+# The mods table — at least one [[mods]] entry is required.
+[[mods]]
+modId = "${mod_id}"
+version = "${mod_version}"
+displayName = "${mod_name}"
+logoFile = "icon.png"
+
+# Mod credits
+credits = "Damage number display with customizable styles and animations."
+
+# Authors — one line per author
+authors = "${mod_authors}"
+
+# Description (multi-line, markdown supported)
+description = '''
+${mod_description}
+
+Features:
+- Custom damage number styles (color, gradient, rainbow)
+- Animation system (position, size, opacity, brightness)
+- Total damage panel
+- Distance-based scaling
+- Overlap detection
+- Third-party mod API
+- Hot-reloadable configuration (/stylizeddamage reload)
+'''
+
+# Optional dependencies on other mods
+# [[dependencies.stylizeddamage]]
+# modId = "othermod"
+# type = "optional"
+# ordering = "NONE"
+# side = "BOTH"
+# versionRange = "[1.0,)"
