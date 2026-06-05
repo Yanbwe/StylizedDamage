@@ -76,7 +76,7 @@ public final class TotalDamageHudRenderer {
     // ── Animation state ─────────────────────────────────────────────
     private TotalPhase totalPhase = TotalPhase.INACTIVE;
     private int totalAnimTick;
-    private float prevTotalDamage;
+    private double prevTotalDamage;
     private int bounceTick;
     private final List<TrailAnimState> trailAnimStates = new ArrayList<>();
 
@@ -504,7 +504,7 @@ public final class TotalDamageHudRenderer {
         catch (Exception e) { return TotalDamageConfig.defaults(); }
     }
 
-    private static double calculateFontSize(TotalDamageConfig cfg, float dmg) {
+    private static double calculateFontSize(TotalDamageConfig cfg, double dmg) {
         double steps = dmg / 100.0;
         double raw = cfg.baseFontSize() + steps * cfg.sizeOffsetPerThousand();
         return Math.max(cfg.baseFontSize(), Math.min(raw, cfg.sizeOffsetMax()));

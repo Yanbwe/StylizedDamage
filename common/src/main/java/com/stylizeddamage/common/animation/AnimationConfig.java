@@ -76,6 +76,7 @@ public record AnimationConfig(
         /**
          * Returns the longest enter duration among all four modules.
          * Used by the engine to synchronise exit-phase start times.
+         * Result is cached after first computation.
          */
         public int maxEnterDuration() {
             int max = 0;
@@ -84,6 +85,20 @@ public record AnimationConfig(
             max = Math.max(max, brightness.enterPhase().effectiveDuration());
             max = Math.max(max, opacity.enterPhase().effectiveDuration());
             return max;
+        }
+
+        /**
+         * Returns the total duration of the animation lifecycle:
+         * maxEnter + holdTicks + longestExitDuration.
+         * When the relative tick reaches this value, the animation is complete.
+         */
+        public int totalDuration() {
+            int maxExit = 0;
+            maxExit = Math.max(maxExit, position.exitPhase().effectiveDuration());
+            maxExit = Math.max(maxExit, size.exitPhase().effectiveDuration());
+            maxExit = Math.max(maxExit, brightness.exitPhase().effectiveDuration());
+            maxExit = Math.max(maxExit, opacity.exitPhase().effectiveDuration());
+            return maxEnterDuration() + holdTicks + maxExit;
         }
     }
 }

@@ -22,7 +22,10 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import org.slf4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Central renderer for floating damage numbers on the HUD layer (NeoForge 1.21.1).
@@ -39,7 +42,7 @@ public final class DamageNumberRenderer {
     public static DamageNumberRenderer getInstance() { return instance; }
 
     private final Minecraft minecraft;
-    private final List<ActiveDamageNumber> activeNumbers = Collections.synchronizedList(new ArrayList<>());
+    private final List<ActiveDamageNumber> activeNumbers = new ArrayList<>();
     private int clientTick = 0;
 
     public DamageNumberRenderer(final Minecraft minecraft) {
@@ -77,21 +80,28 @@ public final class DamageNumberRenderer {
         final LocalPlayer player = minecraft.player;
         if (player == null) return;
 
+        // Fast-path: skip synchronized block + allocation when idle (most frames)
         if (activeNumbers.isEmpty()) return;
 
         final List<ActiveDamageNumber> snapshot;
-        synchronized (activeNumbers) { snapshot = new ArrayList<>(activeNumbers); }
+        synchronized (activeNumbers) {
+            if (activeNumbers.isEmpty()) return; // Double-check within lock
+            snapshot = new ArrayList<>(activeNumbers);
+        }
+
+        // Fetch config once per frame — re-use across all renderSingle calls
+        final CommonConfig config = getConfig();
 
         // Pass 1: normal numbers (skip kill-type)
         for (final ActiveDamageNumber active : snapshot) {
             if ("kill".equals(active.packet().damageTypeId())) continue;
-            renderSingle(active, guiGraphics, font, camera, player, partialTick, screenWidth, screenHeight);
+            renderSingle(active, guiGraphics, font, camera, player, partialTick, screenWidth, screenHeight, config);
         }
 
         // Pass 2: kill numbers (rendered on top)
         for (final ActiveDamageNumber active : snapshot) {
             if (!"kill".equals(active.packet().damageTypeId())) continue;
-            renderSingle(active, guiGraphics, font, camera, player, partialTick, screenWidth, screenHeight);
+            renderSingle(active, guiGraphics, font, camera, player, partialTick, screenWidth, screenHeight, config);
         }
     }
 
@@ -116,7 +126,8 @@ public final class DamageNumberRenderer {
             final LocalPlayer player,
             final float partialTick,
             final int screenWidth,
-            final int screenHeight) {
+            final int screenHeight,
+            final CommonConfig config) {
 
         // 1. Project fixed world position
         ScreenPosition screenPos = EntityScreenMapper.worldToScreen(
@@ -129,7 +140,6 @@ public final class DamageNumberRenderer {
         final double dy = active.worldY() - player.getY();
         final double dz = active.worldZ() - player.getZ();
         final double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        final CommonConfig config = getConfig();
         final Style style = active.style();
         final DistanceScaleConfig distCfg = config != null ? config.distanceScale() : DistanceScaleConfig.defaults();
         final double distanceScale = DamageCalculator.distanceScale(

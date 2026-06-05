@@ -33,8 +33,23 @@ public final class SelectorConfig {
      */
     private final Map<String, Map<String, List<MatchRule>>> intervalMap;
 
+    /** Pre-parsed interval objects for fast lookup — built once during construction. */
+    private final Map<String, IntervalParser.Interval> parsedIntervals;
+
     private SelectorConfig(Map<String, Map<String, List<MatchRule>>> intervalMap) {
         this.intervalMap = Collections.unmodifiableMap(intervalMap);
+        // Pre-parse all interval keys so findInterval() avoids regex matching at runtime
+        Map<String, IntervalParser.Interval> parsed = new LinkedHashMap<>();
+        for (String key : intervalMap.keySet()) {
+            if (!"common".equals(key)) {
+                try {
+                    parsed.put(key, IntervalParser.parse(key));
+                } catch (IllegalArgumentException ignored) {
+                    // Malformed interval keys are skipped — they can't match
+                }
+            }
+        }
+        this.parsedIntervals = Collections.unmodifiableMap(parsed);
     }
 
     // ── Public factory ────────────────────────────────────────────────
@@ -151,21 +166,18 @@ public final class SelectorConfig {
     /**
      * Finds the interval that should apply for the given damage value.
      *
-     * <p>Non-{@code "common"} intervals are tested in insertion order.
-     * When no specific interval matches, {@code "common"} is returned.
+     * <p>Uses pre-parsed cached intervals for O(1) per-check amortized cost
+     * (no regex matching at runtime). Non-{@code "common"} intervals are
+     * tested in insertion order. When no specific interval matches,
+     * {@code "common"} is returned.
      *
      * @param damage the damage amount
      * @return the matching interval key, never {@code null}
      */
     public String findInterval(double damage) {
-        for (Map.Entry<String, Map<String, List<MatchRule>>> entry : intervalMap.entrySet()) {
-            String key = entry.getKey();
-            if ("common".equals(key)) {
-                continue; // test common only as absolute fallback
-            }
-            IntervalParser.Interval interval = IntervalParser.parse(key);
-            if (interval.contains(damage)) {
-                return key;
+        for (Map.Entry<String, IntervalParser.Interval> entry : parsedIntervals.entrySet()) {
+            if (entry.getValue().contains(damage)) {
+                return entry.getKey();
             }
         }
         return "common";

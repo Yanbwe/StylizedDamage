@@ -44,12 +44,12 @@ import java.util.*;
  */
 public final class DamageAccumulator {
 
-    private final float totalDamage;
+    private final double totalDamage;
     private final List<TrailEntry> trailList;
     private final int resetTimer;
     private final TotalDamageConfig config;
 
-    private DamageAccumulator(float totalDamage,
+    private DamageAccumulator(double totalDamage,
                               List<TrailEntry> trailList,
                               int resetTimer,
                               TotalDamageConfig config) {
@@ -71,7 +71,7 @@ public final class DamageAccumulator {
      * @return a new, zeroed-out accumulator
      */
     public static DamageAccumulator create(TotalDamageConfig config) {
-        return new DamageAccumulator(0.0f, List.of(), 0, config);
+        return new DamageAccumulator(0.0, List.of(), 0, config);
     }
 
     /**
@@ -100,16 +100,16 @@ public final class DamageAccumulator {
     public DamageAccumulator accumulate(float damage, String styleName, int currentTick) {
         Objects.requireNonNull(styleName, "styleName must not be null");
 
-        float newTotal = totalDamage + damage;
+        double newTotal = totalDamage + damage;
 
         // Build new trail list: new entry at head, then existing entries
         List<TrailEntry> newTrail = new ArrayList<>(config.maxTrailCount() + 1);
         newTrail.add(new TrailEntry(damage, styleName, currentTick));
         newTrail.addAll(trailList);
 
-        // Truncate to maxTrailCount (remove oldest from tail)
-        while (newTrail.size() > config.maxTrailCount()) {
-            newTrail.remove(newTrail.size() - 1);
+        // Truncate to maxTrailCount (remove oldest from tail) — at most one extra
+        if (newTrail.size() > config.maxTrailCount()) {
+            newTrail = new ArrayList<>(newTrail.subList(0, config.maxTrailCount()));
         }
 
         return new DamageAccumulator(newTotal, newTrail, config.resetTimeout(), config);
@@ -209,7 +209,7 @@ public final class DamageAccumulator {
 
     /** The accumulated total damage. */
     public float totalDamage() {
-        return totalDamage;
+        return (float) totalDamage;
     }
 
     /** An unmodifiable view of the trail list (newest entry at index 0). */
@@ -260,7 +260,7 @@ public final class DamageAccumulator {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof DamageAccumulator other)) return false;
-        return Float.compare(other.totalDamage, totalDamage) == 0
+        return Double.compare(other.totalDamage, totalDamage) == 0
                 && resetTimer == other.resetTimer
                 && trailList.equals(other.trailList)
                 && config.equals(other.config);

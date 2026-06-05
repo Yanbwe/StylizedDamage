@@ -42,10 +42,9 @@ public final class AnimationEngine {
         }
 
         // All modules share the same exit start time (= longest enter + hold).
-        // This prevents modules with shorter enter phases from starting their
-        // exit earlier than others, which would cause visible desync.
         final int holdTicks = resolved.holdTicks();
         final int maxEnter = resolved.maxEnterDuration();
+        final int totalDur = resolved.totalDuration();
 
         // Position
         double offsetX = computePosition(tick, holdTicks, maxEnter, resolved.position(), true);
@@ -81,20 +80,9 @@ public final class AnimationEngine {
         // Clamp opacity to valid range
         opacity = clamp(opacity, 0.0, 1.0);
 
-        // Determine completion (uses maxEnter so all modules sync)
-        boolean posComplete = isModuleComplete(
-                tick, holdTicks, maxEnter,
-                resolved.position().enterPhase(), resolved.position().exitPhase());
-        boolean sizeComplete = isModuleComplete(
-                tick, holdTicks, maxEnter,
-                resolved.size().enterPhase(), resolved.size().exitPhase());
-        boolean brightComplete = isModuleComplete(
-                tick, holdTicks, maxEnter,
-                resolved.brightness().enterPhase(), resolved.brightness().exitPhase());
-        boolean opacityComplete = isModuleComplete(
-                tick, holdTicks, maxEnter,
-                resolved.opacity().enterPhase(), resolved.opacity().exitPhase());
-        boolean isComplete = posComplete && sizeComplete && brightComplete && opacityComplete;
+        // Determine completion: all modules are done when tick passes
+        // maxEnter + holdTicks + longestExitDuration (= totalDuration)
+        final boolean isComplete = tick >= totalDur;
 
         return new AnimationState(offsetX, offsetY, scale, brightnessOffset, opacity, isComplete);
     }
@@ -182,18 +170,6 @@ public final class AnimationEngine {
             return enterTarget;
         }
         return exitTarget;
-    }
-
-    // ========================================================================
-    // Module completion check
-    // ========================================================================
-
-    private static boolean isModuleComplete(
-            double tick, int holdTicks, int maxEnter,
-            PhaseConfig enterPhase, PhaseConfig exitPhase) {
-
-        int totalDuration = maxEnter + holdTicks + exitPhase.effectiveDuration();
-        return tick >= totalDuration;
     }
 
     // ========================================================================

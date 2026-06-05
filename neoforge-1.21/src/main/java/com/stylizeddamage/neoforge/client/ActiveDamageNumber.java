@@ -103,8 +103,13 @@ public final class ActiveDamageNumber {
         return AnimationEngine.update(relativeTick, resolvedAnimation);
     }
 
+    /**
+     * Lightweight completion check — compares current tick against the
+     * pre-computed total duration without running the full animation engine.
+     */
     public boolean isComplete(final int currentTick) {
-        return tick((double) currentTick).isComplete();
+        final int relativeTick = currentTick - createTick;
+        return relativeTick >= resolvedAnimation.totalDuration();
     }
 
     // ── Accessors ────────────────────────────────────────────────────
