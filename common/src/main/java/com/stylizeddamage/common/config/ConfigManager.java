@@ -2,6 +2,9 @@ package com.stylizeddamage.common.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
@@ -23,6 +26,8 @@ import java.nio.file.Path;
  * common module has zero platform dependencies — only {@code java.nio.file}.
  */
 public final class ConfigManager {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger("StylizedDamage");
 
     private static volatile ConfigManager instance;
 
@@ -124,7 +129,7 @@ public final class ConfigManager {
                 config = defaults;
                 return;
             } catch (IOException e) {
-                System.err.println("[StylizedDamage] Failed to write default common.json: " + e.getMessage());
+                LOGGER.error("Failed to write default common.json: {}", e.getMessage());
                 config = CommonConfig.createDefault();
                 return;
             }
@@ -136,12 +141,10 @@ public final class ConfigManager {
                 config = CommonConfig.createDefault();
             }
         } catch (IOException e) {
-            System.err.println("[StylizedDamage] Failed to read common.json: "
-                    + e.getMessage() + " — using defaults");
+            LOGGER.error("Failed to read common.json: {} — using defaults", e.getMessage());
             config = CommonConfig.createDefault();
         } catch (Exception e) {
-            System.err.println("[StylizedDamage] Failed to parse common.json: "
-                    + e.getMessage() + " — using defaults");
+            LOGGER.error("Failed to parse common.json: {} — using defaults", e.getMessage());
             config = CommonConfig.createDefault();
         }
     }

@@ -10,6 +10,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Forge 1.20.1 implementation of {@link NetworkRegistrar} using Forge's
@@ -26,6 +28,8 @@ import net.minecraftforge.network.simple.SimpleChannel;
  * and may be {@code null} on the dedicated server (where no rendering pipeline exists).
  */
 public final class ForgeNetworkRegistrar implements NetworkRegistrar<Entity, ServerPlayer> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger("StylizedDamage");
 
     private static final ResourceLocation CHANNEL_NAME =
             new ResourceLocation("stylizeddamage", "main");
@@ -73,7 +77,7 @@ public final class ForgeNetworkRegistrar implements NetworkRegistrar<Entity, Ser
                     if (h != null) {
                         h.handleDamageSync(packet);
                     } else {
-                        System.err.println("[StylizedDamage] Received DamageSyncPacket but handler is null!");
+                        LOGGER.warn("Received DamageSyncPacket but handler is null!");
                     }
                 })
                 .add();

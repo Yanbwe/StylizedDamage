@@ -117,7 +117,7 @@ public final class DamageEventListener {
         int targetEntityId = entity.getId();
         long timestamp = System.currentTimeMillis();
 
-        boolean isCritical = false; // TODO: detect via player attack state
+        boolean isCritical = isCriticalHit(source);
 
         // Compute the world position where the damage landed
         final Vec3 hitPos = computeHitPosition(source, entity, damageTypeId);
@@ -247,5 +247,20 @@ public final class DamageEventListener {
             case MOB_PASSIVE -> EntityInfo.passiveMob(name);
             case OTHER -> EntityInfo.other(name);
         };
+    }
+
+    /**
+     * Determines whether the damage was a critical hit in NeoForge 1.21.1.
+     */
+    private static boolean isCriticalHit(final DamageSource source) {
+        final Entity attacker = source.getEntity();
+        if (!(attacker instanceof final Player player)) {
+            return false;
+        }
+        return !player.onGround()
+                && player.fallDistance > 0.0F
+                && !player.isInWater()
+                && !player.isPassenger()
+                && !player.isFallFlying();
     }
 }

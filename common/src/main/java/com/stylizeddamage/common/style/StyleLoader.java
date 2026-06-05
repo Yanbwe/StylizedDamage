@@ -7,6 +7,8 @@ import com.stylizeddamage.common.style.color.ColorParser;
 import com.stylizeddamage.common.style.color.ColorSource;
 import com.stylizeddamage.common.util.EasingCurve;
 import com.stylizeddamage.common.util.RandomValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -46,6 +48,8 @@ import java.util.stream.Stream;
  */
 public final class StyleLoader {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger("StylizedDamage");
+
     private final Path stylesDir;
     private final Gson gson;
     private volatile Map<String, Style> styles;
@@ -81,8 +85,7 @@ public final class StyleLoader {
      */
     public Map<String, Style> load() {
         if (!Files.isDirectory(stylesDir)) {
-            System.err.println("[StylizedDamage] Styles directory does not exist: "
-                    + stylesDir + " — no styles loaded.");
+            LOGGER.warn("Styles directory does not exist: {} — no styles loaded.", stylesDir);
             Map<String, Style> empty = Collections.emptyMap();
             this.styles = empty;
             return empty;
@@ -103,13 +106,11 @@ public final class StyleLoader {
                             Style style = parseStyleFile(path);
                             map.put(name, style);
                         } catch (Exception e) {
-                            System.err.println("[StylizedDamage] Failed to parse style \""
-                                    + name + "\": " + e.getMessage() + " — skipping.");
+                            LOGGER.warn("Failed to parse style \"{}\": {} — skipping.", name, e.getMessage());
                         }
                     });
         } catch (IOException e) {
-            System.err.println("[StylizedDamage] Failed to list styles directory: "
-                    + e.getMessage());
+            LOGGER.error("Failed to list styles directory: {}", e.getMessage());
         }
 
         Map<String, Style> immutable = Collections.unmodifiableMap(new LinkedHashMap<>(map));
@@ -215,8 +216,7 @@ public final class StyleLoader {
         try {
             return ColorParser.parse(elem.getAsString());
         } catch (IllegalArgumentException e) {
-            System.err.println("[StylizedDamage] Invalid color value for \"" + key
-                    + "\": " + e.getMessage() + " — using default.");
+            LOGGER.warn("Invalid color value for \"{}\": {} — using default.", key, e.getMessage());
             return ColorParser.parse(defaultHex);
         }
     }
@@ -243,8 +243,7 @@ public final class StyleLoader {
             // If it's rainbow, resolve at tick 0 as a fallback
             return cs.resolve(0f, 0);
         } catch (IllegalArgumentException e) {
-            System.err.println("[StylizedDamage] Invalid colour for \"" + key
-                    + "\": " + e.getMessage() + " — skipping.");
+            LOGGER.warn("Invalid colour for \"{}\": {} — skipping.", key, e.getMessage());
             return null;
         }
     }
@@ -493,8 +492,7 @@ public final class StyleLoader {
         try {
             return RandomValue.fromJSON(elem);
         } catch (IllegalArgumentException e) {
-            System.err.println("[StylizedDamage] Invalid RandomValue: " + e.getMessage()
-                    + " — using zero.");
+            LOGGER.warn("Invalid RandomValue: {} — using zero.", e.getMessage());
             return RandomValue.ZERO;
         }
     }
@@ -516,8 +514,7 @@ public final class StyleLoader {
             }
             return new RandomValue(clampedBase, rv.randomMin(), rv.randomMax());
         } catch (IllegalArgumentException e) {
-            System.err.println("[StylizedDamage] Invalid opacity value: " + e.getMessage()
-                    + " — using zero.");
+            LOGGER.warn("Invalid opacity value: {} — using zero.", e.getMessage());
             return RandomValue.ZERO;
         }
     }

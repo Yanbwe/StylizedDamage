@@ -1,15 +1,22 @@
 package com.stylizeddamage.forge.event;
 
+import com.stylizeddamage.common.config.CommonConfig;
+import com.stylizeddamage.common.config.ConfigManager;
 import com.stylizeddamage.common.network.DamageSyncPacket;
 import com.stylizeddamage.common.network.NetworkRegistrar;
 import com.stylizeddamage.common.network.TotalDamageSyncPacket;
+import com.stylizeddamage.common.selector.DisplayFilter;
+import com.stylizeddamage.common.selector.EntityClassifier;
+import com.stylizeddamage.common.selector.EntityInfo;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.PlayerTeam;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -62,12 +69,25 @@ public final class DamageEventListener {
             return;
         }
 
-        // Determine source entity ID (entity that caused the damage)
+        // Determine source entity
         final Entity sourceEntity = source.getEntity();
         final int sourceEntityId = sourceEntity != null ? sourceEntity.getId() : -1;
 
-        // Get the damage type identifier (e.g. "inFire", "mob", "player")
+        // Get the damage type identifier (e.g. "minecraft:in_fire")
         final String damageTypeId = source.getMsgId();
+
+        // ── Apply display filter from common.json ──
+        final CommonConfig config = ConfigManager.getInstance().getConfig();
+        final DisplayFilter filter = new DisplayFilter(config.displayFilter());
+
+        final boolean isSelf = sourceEntity != null && sourceEntity.equals(target);
+        final EntityInfo targetInfo = classifyEntity(target);
+        final EntityInfo sourceInfo = sourceEntity != null
+                ? classifyEntity(sourceEntity) : targetInfo;
+
+        if (!filter.shouldDisplay(sourceInfo, targetInfo, isSelf, damage)) {
+            return;
+        }
 
         // Detect critical hit: player attacker falling without being on ground
         final boolean isCritical = isCriticalHit(source);
@@ -95,8 +115,9 @@ public final class DamageEventListener {
         }
 
         // If this damage killed the entity, send a kill notification
-        // (pre-damage health <= damage means fatal blow; does NOT count in total damage)
-        if (target.getHealth() <= damage) {
+        // LivingDamageEvent fires after health reduction, so post-damage health <= 0 = fatal
+        // (kill pseudo-type does NOT count toward total damage)
+        if (target.getHealth() <= 0.0F) {
             final DamageSyncPacket killPacket = new DamageSyncPacket(
                     sourceEntityId, target.getId(), 0f, "kill",
                     false, System.currentTimeMillis(),
@@ -180,5 +201,32 @@ public final class DamageEventListener {
                 && !player.isInWater()
                 && !player.isPassenger()
                 && !player.isFallFlying();
+    }
+
+    /**
+     * Classifies a Minecraft entity into an {@link EntityInfo} record
+     * suitable for the common module's {@link DisplayFilter}.
+     */
+    private static EntityInfo classifyEntity(final Entity entity) {
+        final boolean isPlayer = entity instanceof Player;
+        final String mobCategoryName = entity instanceof Mob
+                ? entity.getType().getCategory().getName() : null;
+
+        final EntityClassifier.EntityType type =
+                EntityClassifier.classify(isPlayer, mobCategoryName);
+
+        String teamId = null;
+        final PlayerTeam team = entity.getTeam();
+        if (team != null) {
+            teamId = team.getName();
+        }
+        final String name = entity.getName().getString();
+
+        return switch (type) {
+            case PLAYER -> EntityInfo.player(teamId, name);
+            case MOB_HOSTILE -> EntityInfo.hostileMob(name);
+            case MOB_PASSIVE -> EntityInfo.passiveMob(name);
+            case OTHER -> EntityInfo.other(name);
+        };
     }
 }

@@ -17,7 +17,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
+
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import org.slf4j.Logger;
@@ -363,35 +363,6 @@ public final class DamageNumberRenderer {
             activeNumbers.add(number);
         }
     }
-
-    /**
-     * Computes current screen positions of all active damage numbers
-     * by resolving entity world positions through the camera.
-     * Used for overlap detection.
-     */
-    private List<ScreenPosition> computeCurrentPositions() {
-        final List<ScreenPosition> positions = new ArrayList<>();
-        final Camera camera = minecraft.gameRenderer.getMainCamera();
-        if (camera == null || !camera.isInitialized() || minecraft.level == null) {
-            return positions;
-        }
-        final int screenW = minecraft.getWindow().getGuiScaledWidth();
-        final int screenH = minecraft.getWindow().getGuiScaledHeight();
-
-        for (final ActiveDamageNumber active : activeNumbers) {
-            final Entity entity = minecraft.level.getEntity(active.entityId());
-            if (entity != null) {
-                final ScreenPosition pos = EntityScreenMapper.worldToScreen(
-                        camera, entity, screenW, screenH);
-                if (pos != null) {
-                    positions.add(pos);
-                }
-            }
-        }
-        return positions;
-    }
-
-    // ── Accessors ────────────────────────────────────────────────────
 
     /**
      * Returns the current client tick counter.
