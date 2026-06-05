@@ -65,8 +65,8 @@ public final class AnimationEngine {
         double brightnessOffset = computeScalar(
                 tick, holdTicks, maxEnter,
                 resolved.brightness().enterPhase(), resolved.brightness().exitPhase(),
-                0.0, // brightness enter always starts from 0
-                resolved.brightness().enterTargetOffset(),
+                resolved.brightness().enterStartOffset(), // enter start (e.g. bright/dim)
+                0.0,                                       // enter target = original brightness
                 resolved.brightness().exitTargetOffset()
         );
 

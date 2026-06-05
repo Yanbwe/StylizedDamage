@@ -342,7 +342,7 @@ public final class AnimationBuilder {
         private final AnimationBuilder parent;
         private PhaseConfig enterPhase = PhaseConfig.NONE;
         private PhaseConfig exitPhase = PhaseConfig.NONE;
-        private RandomValue enterTargetOffset = RandomValue.ZERO;
+        private RandomValue enterStartOffset = RandomValue.ZERO;
         private RandomValue exitTargetOffset = RandomValue.ZERO;
 
         BrightnessBuilder(AnimationBuilder parent) {
@@ -350,23 +350,23 @@ public final class AnimationBuilder {
         }
 
         /**
-         * Sets the enter phase. Brightness enter always starts from 0 offset
-         * and interpolates to the target.
+         * Sets the enter phase. Brightness enter starts from the given offset
+         * and interpolates to 0 (original brightness).
          * @param type        {@code "normal"} or {@code "none"}
          * @param duration    duration in ticks
          * @param easing      easing curve
-         * @param targetOffset target brightness offset (positive = brighter)
+         * @param startOffset starting brightness offset (positive = brighter, negative = darker)
          */
-        public BrightnessBuilder enter(String type, int duration, EasingCurve easing, double targetOffset) {
+        public BrightnessBuilder enter(String type, int duration, EasingCurve easing, double startOffset) {
             this.enterPhase = parsePhase(type, duration, easing);
-            this.enterTargetOffset = RandomValue.fixed(targetOffset);
+            this.enterStartOffset = RandomValue.fixed(startOffset);
             return this;
         }
 
-        /** Sets the enter phase with a random target offset. */
-        public BrightnessBuilder enter(String type, int duration, EasingCurve easing, RandomValue targetOffset) {
+        /** Sets the enter phase with a random start offset. */
+        public BrightnessBuilder enter(String type, int duration, EasingCurve easing, RandomValue startOffset) {
             this.enterPhase = parsePhase(type, duration, easing);
-            this.enterTargetOffset = Objects.requireNonNull(targetOffset, "targetOffset must not be null");
+            this.enterStartOffset = Objects.requireNonNull(startOffset, "startOffset must not be null");
             return this;
         }
 
@@ -395,7 +395,7 @@ public final class AnimationBuilder {
         /** Builds the {@link BrightnessConfig}. Called internally. */
         BrightnessConfig build() {
             return new BrightnessConfig(enterPhase, exitPhase,
-                    enterTargetOffset, exitTargetOffset);
+                    enterStartOffset, exitTargetOffset);
         }
     }
 

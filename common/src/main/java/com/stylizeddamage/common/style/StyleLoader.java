@@ -381,8 +381,8 @@ public final class StyleLoader {
         JsonObject enterJson = json.has("enter") && json.get("enter").isJsonObject()
                 ? json.getAsJsonObject("enter") : new JsonObject();
         PhaseConfig enterPhase = parsePhase(enterJson);
-        RandomValue enterTargetOffset = parseRandomValue(
-                enterJson.has("targetOffset") ? enterJson.get("targetOffset") : null);
+        RandomValue enterStartOffset = parseRandomValue(
+                enterJson.has("startOffset") ? enterJson.get("startOffset") : null);
 
         JsonObject exitJson = json.has("exit") && json.get("exit").isJsonObject()
                 ? json.getAsJsonObject("exit") : new JsonObject();
@@ -391,7 +391,7 @@ public final class StyleLoader {
                 exitJson.has("targetOffset") ? exitJson.get("targetOffset") : null);
 
         return new BrightnessConfig(enterPhase, exitPhase,
-                enterTargetOffset, exitTargetOffset);
+                enterStartOffset, exitTargetOffset);
     }
 
     // ── Opacity parsing ─────────────────────────────────────────────
