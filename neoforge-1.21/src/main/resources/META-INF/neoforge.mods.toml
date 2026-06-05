@@ -8,7 +8,7 @@ license = "MIT"
 # The mods table — at least one [[mods]] entry is required.
 [[mods]]
 modId = "${mod_id}"
-version = "${mod_version}"
+version = "1211.1.1"
 displayName = "${mod_name}"
 logoFile = "icon.png"
 
