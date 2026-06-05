@@ -75,11 +75,79 @@ public final class StylizedDamageForge {
                 "sizeOffsetPerStep": 0.5,
                 "maxSize": 3.0,
                 "holdBase": 0,
-                "holdOffsetPerStep": 40,
-                "holdMax": 200
+                "holdOffsetPerStep": 20,
+                "holdMax": 140
               },
               "animation": {
-                "hold": 10,
+                "hold": 20,
+                "position": {
+                  "enter": {
+                    "type": "normal",
+                    "duration": 30,
+                    "easing": { "in": false, "out": true },
+                    "startOffset": { "type": "xy", "x": { "base": 2, "random": [-2, 2] }, "y": { "base": 2, "random": [-2, 2] } },
+                    "targetOffset": { "type": "direction", "angle": { "base": 90, "random": [-1, 1] }, "distance": { "base": 20, "random": [-2, 2] } }
+                  },
+                  "exit": { "type": "none" }
+                },
+                "size": {
+                  "enter": {
+                    "type": "normal",
+                    "duration": 40,
+                    "easing": { "in": true, "out": true },
+                    "startOffset": 0.3,
+                    "targetOffset": 0
+                  },
+                  "exit": {
+                    "type": "normal",
+                    "duration": 40,
+                    "easing": { "in": true, "out": false },
+                    "targetOffset": -1
+                  }
+                },
+                "brightness": {
+                  "enter": { "type": "none" },
+                  "exit": { "type": "none" }
+                },
+                "opacity": {
+                  "enter": {
+                    "type": "normal",
+                    "duration": 10,
+                    "easing": { "in": true, "out": true },
+                    "startOpacity": 0,
+                    "targetOpacity": 1
+                  },
+                  "exit": {
+                    "type": "normal",
+                    "duration": 40,
+                    "easing": { "in": true, "out": false },
+                    "targetOpacity": 0
+                  }
+                }
+              }""";
+
+    private static final String HEAL_STYLE_JSON = """
+            {
+              "color": "#73FF44",
+              "prefix": "+",
+              "bypassDisplayOpacity": true
+            }""";
+
+    private static final String ABSORPTION_STYLE_JSON = """
+            {
+              "color": "#FFFF00",
+              "prefix": "+🛡",
+              "bypassDisplayOpacity": true
+            }""";
+
+    private static final String KILL_STYLE_JSON = """
+            {
+              "color": "#FFFF00",
+              "fontSize": 3,
+              "killText": "🗡kill!",
+              "bypassDisplayOpacity": true,
+              "animation": {
+                "hold": 100,
                 "position": {
                   "enter": {
                     "type": "normal",
@@ -125,28 +193,6 @@ public final class StylizedDamageForge {
                   }
                 }
               }
-            }""";
-
-    private static final String HEAL_STYLE_JSON = """
-            {
-              "color": "#73FF44",
-              "prefix": "+",
-              "bypassDisplayOpacity": true
-            }""";
-
-    private static final String ABSORPTION_STYLE_JSON = """
-            {
-              "color": "#FFFF00",
-              "prefix": "+🛡",
-              "bypassDisplayOpacity": true
-            }""";
-
-    private static final String KILL_STYLE_JSON = """
-            {
-              "color": "#FFFF00",
-              "fontSize": 3,
-              "killText": "🗡kill!",
-              "bypassDisplayOpacity": true
             }""";
 
     private static final String FIRE_STYLE_JSON = """

@@ -95,22 +95,8 @@ public final class DamageEventListener {
         DamageSource source = event.getSource();
         String damageTypeId = extractDamageTypeId(source);
 
-        // Apply the display filter from common.json
-        CommonConfig config = ConfigManager.getInstance().getConfig();
-        DisplayFilter filter = new DisplayFilter(config.displayFilter());
-
+        // Determine source entity early — needed for packet, filter, and kill check
         Entity sourceEntity = source.getEntity();
-        boolean isSelf = sourceEntity != null && sourceEntity.equals(entity);
-
-        EntityInfo targetInfo = classifyEntity(entity);
-        EntityInfo sourceInfo = sourceEntity != null
-                ? classifyEntity(sourceEntity) : targetInfo;
-
-        if (!filter.shouldDisplay(sourceInfo, targetInfo, isSelf, damage)) {
-            LOG.trace("Damage display filtered: entity={}, type={}, amount={}",
-                    entity.getName().getString(), damageTypeId, damage);
-            return;
-        }
 
         // Build the packet
         int sourceEntityId = sourceEntity != null ? sourceEntity.getId() : -1;
@@ -127,6 +113,18 @@ public final class DamageEventListener {
                 isCritical, timestamp,
                 hitPos.x, hitPos.y, hitPos.z);
 
+        // ── Apply display filter from common.json ──
+        // Filter controls whether the normal damage floating number appears.
+        // Placed AFTER kill detection so kills always fire regardless of filter.
+        CommonConfig config = ConfigManager.getInstance().getConfig();
+        DisplayFilter filter = new DisplayFilter(config.displayFilter());
+        boolean isSelf = sourceEntity != null && sourceEntity.equals(entity);
+        EntityInfo targetInfo = classifyEntity(entity);
+        EntityInfo sourceInfo = sourceEntity != null
+                ? classifyEntity(sourceEntity) : targetInfo;
+
+        boolean shouldShowDamage = filter.shouldDisplay(sourceInfo, targetInfo, isSelf, damage);
+
         LOG.trace("Dispatching damage sync: target={}, amount={}, type={}",
                 entity.getName().getString(), damage, damageTypeId);
 
@@ -134,7 +132,9 @@ public final class DamageEventListener {
         @SuppressWarnings("unchecked")
         NetworkRegistrar<Entity, ServerPlayer> registrar = NeoForgePlatform.getNetworkRegistrar();
         if (registrar != null) {
-            registrar.sendToTracking(packet, entity);
+            if (shouldShowDamage) {
+                registrar.sendToTracking(packet, entity);
+            }
 
             // If a player caused this damage, update their total damage panel
             if (sourceEntity instanceof ServerPlayer player) {

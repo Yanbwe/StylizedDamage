@@ -49,6 +49,162 @@ public final class StylizedDamageNeoForge {
 
     private static final Logger LOG = LoggerFactory.getLogger(MOD_ID);
 
+    /** Default style JSON written when no styles exist. */
+    private static final String DEFAULT_STYLE_JSON = """
+            {
+              "color": "#FFFFFF",
+              "fontSize": 1,
+              "fontStyle": "bold",
+              "shadow": true,
+              "outlineColor": null,
+              "prefix": "",
+              "suffix": "",
+              "icon": "",
+              "sound": null,
+              "killText": "kill!",
+              "iconPosition": "right",
+              "iconOffsetX": 0,
+              "iconOffsetY": 4,
+              "damageScale": {
+                "enabled": true,
+                "baseFontSize": 1.0,
+                "stepSize": 10,
+                "sizeOffsetPerStep": 0.5,
+                "maxSize": 3.0,
+                "holdBase": 0,
+                "holdOffsetPerStep": 20,
+                "holdMax": 140
+              },
+              "animation": {
+                "hold": 20,
+                "position": {
+                  "enter": {
+                    "type": "normal",
+                    "duration": 30,
+                    "easing": { "in": false, "out": true },
+                    "startOffset": { "type": "xy", "x": { "base": 2, "random": [-2, 2] }, "y": { "base": 2, "random": [-2, 2] } },
+                    "targetOffset": { "type": "direction", "angle": { "base": 90, "random": [-1, 1] }, "distance": { "base": 20, "random": [-2, 2] } }
+                  },
+                  "exit": { "type": "none" }
+                },
+                "size": {
+                  "enter": {
+                    "type": "normal",
+                    "duration": 40,
+                    "easing": { "in": true, "out": true },
+                    "startOffset": 0.3,
+                    "targetOffset": 0
+                  },
+                  "exit": {
+                    "type": "normal",
+                    "duration": 40,
+                    "easing": { "in": true, "out": false },
+                    "targetOffset": -1
+                  }
+                },
+                "brightness": {
+                  "enter": { "type": "none" },
+                  "exit": { "type": "none" }
+                },
+                "opacity": {
+                  "enter": {
+                    "type": "normal",
+                    "duration": 10,
+                    "easing": { "in": true, "out": true },
+                    "startOpacity": 0,
+                    "targetOpacity": 1
+                  },
+                  "exit": {
+                    "type": "normal",
+                    "duration": 40,
+                    "easing": { "in": true, "out": false },
+                    "targetOpacity": 0
+                  }
+                }
+              }""";
+
+    private static final String HEAL_STYLE_JSON = """
+            {
+              "color": "#73FF44",
+              "prefix": "+",
+              "bypassDisplayOpacity": true
+            }""";
+
+    private static final String ABSORPTION_STYLE_JSON = """
+            {
+              "color": "#FFFF00",
+              "prefix": "+🛡",
+              "bypassDisplayOpacity": true
+            }""";
+
+    private static final String KILL_STYLE_JSON = """
+            {
+              "color": "#FFFF00",
+              "fontSize": 3,
+              "killText": "🗡kill!",
+              "bypassDisplayOpacity": true,
+              "animation": {
+                "hold": 100,
+                "position": {
+                  "enter": {
+                    "type": "normal",
+                    "duration": 30,
+                    "easing": { "in": false, "out": true },
+                    "startOffset": { "type": "xy", "x": { "base": 2, "random": [-2, 2] }, "y": { "base": 2, "random": [-2, 2] } },
+                    "targetOffset": { "type": "direction", "angle": { "base": 90, "random": [-1, 1] }, "distance": { "base": 20, "random": [-2, 2] } }
+                  },
+                  "exit": { "type": "none" }
+                },
+                "size": {
+                  "enter": {
+                    "type": "normal",
+                    "duration": 40,
+                    "easing": { "in": true, "out": true },
+                    "startOffset": 0.3,
+                    "targetOffset": 0
+                  },
+                  "exit": {
+                    "type": "normal",
+                    "duration": 40,
+                    "easing": { "in": true, "out": false },
+                    "targetOffset": -1
+                  }
+                },
+                "brightness": {
+                  "enter": { "type": "none" },
+                  "exit": { "type": "none" }
+                },
+                "opacity": {
+                  "enter": {
+                    "type": "normal",
+                    "duration": 10,
+                    "easing": { "in": true, "out": true },
+                    "startOpacity": 0,
+                    "targetOpacity": 1
+                  },
+                  "exit": {
+                    "type": "normal",
+                    "duration": 40,
+                    "easing": { "in": true, "out": false },
+                    "targetOpacity": 0
+                  }
+                }
+              }
+            }""";
+
+    private static final String FIRE_STYLE_JSON = """
+            {
+              "color": "#FF3F00",
+              "prefix": "🔥",
+              "bypassDisplayOpacity": true
+            }""";
+
+    private static final String MAGIC_STYLE_JSON = """
+            {
+              "color": "#00FFFF",
+              "prefix": "💔"
+            }""";
+
     /**
      * Constructs the NeoForge mod instance.
      *
@@ -62,6 +218,29 @@ public final class StylizedDamageNeoForge {
         // Use NeoForge's FMLPaths for the config directory
         java.nio.file.Path configDir =
                 net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve(MOD_ID);
+
+        // Ensure the config directory and styles subdirectory exist
+        java.nio.file.Path stylesDir = configDir.resolve("styles");
+        try {
+            java.nio.file.Files.createDirectories(stylesDir);
+            // Generate default style files if they don't exist
+            for (String[] entry : new String[][]{
+                    {"default.json", DEFAULT_STYLE_JSON},
+                    {"heal.json", HEAL_STYLE_JSON},
+                    {"absorption.json", ABSORPTION_STYLE_JSON},
+                    {"kill.json", KILL_STYLE_JSON},
+                    {"fire.json", FIRE_STYLE_JSON},
+                    {"magic.json", MAGIC_STYLE_JSON},
+            }) {
+                java.nio.file.Path path = stylesDir.resolve(entry[0]);
+                if (!java.nio.file.Files.exists(path)) {
+                    java.nio.file.Files.writeString(path, entry[1]);
+                    LOG.info("Created default style: {}", path);
+                }
+            }
+        } catch (final java.io.IOException e) {
+            LOG.error("Failed to create default style files: {}", e.getMessage());
+        }
 
         // 1. Initialize configuration manager (singleton, loads common.json)
         ConfigManager configManager = ConfigManager.initialize(configDir);

@@ -76,19 +76,6 @@ public final class DamageEventListener {
         // Get the damage type identifier (e.g. "minecraft:in_fire")
         final String damageTypeId = source.getMsgId();
 
-        // ── Apply display filter from common.json ──
-        final CommonConfig config = ConfigManager.getInstance().getConfig();
-        final DisplayFilter filter = new DisplayFilter(config.displayFilter());
-
-        final boolean isSelf = sourceEntity != null && sourceEntity.equals(target);
-        final EntityInfo targetInfo = classifyEntity(target);
-        final EntityInfo sourceInfo = sourceEntity != null
-                ? classifyEntity(sourceEntity) : targetInfo;
-
-        if (!filter.shouldDisplay(sourceInfo, targetInfo, isSelf, damage)) {
-            return;
-        }
-
         // Detect critical hit: player attacker falling without being on ground
         final boolean isCritical = isCriticalHit(source);
 
@@ -105,7 +92,19 @@ public final class DamageEventListener {
                 hitPos.x, hitPos.y, hitPos.z
         );
 
-        network.sendToTracking(packet, target);
+        // ── Apply display filter from common.json ──
+        // DisplayFilter determines whether normal damage numbers are shown.
+        // Placed AFTER kill detection so kills always fire regardless of filter.
+        final CommonConfig config = ConfigManager.getInstance().getConfig();
+        final DisplayFilter filter = new DisplayFilter(config.displayFilter());
+        final boolean isSelf = sourceEntity != null && sourceEntity.equals(target);
+        final EntityInfo targetInfo = classifyEntity(target);
+        final EntityInfo sourceInfo = sourceEntity != null
+                ? classifyEntity(sourceEntity) : targetInfo;
+
+        if (filter.shouldDisplay(sourceInfo, targetInfo, isSelf, damage)) {
+            network.sendToTracking(packet, target);
+        }
 
         // If a player caused this damage, update their total damage panel
         if (sourceEntity instanceof ServerPlayer player) {
@@ -115,9 +114,11 @@ public final class DamageEventListener {
         }
 
         // If this damage killed the entity, send a kill notification
-        // LivingDamageEvent fires after health reduction, so post-damage health <= 0 = fatal
+        // Forge's LivingDamageEvent fires BEFORE health is actually subtracted,
+        // so target.getHealth() returns pre-damage health. A fatal blow is when
+        // the remaining health is ≤ the incoming damage.
         // (kill pseudo-type does NOT count toward total damage)
-        if (target.getHealth() <= 0.0F) {
+        if (target.getHealth() <= damage) {
             final DamageSyncPacket killPacket = new DamageSyncPacket(
                     sourceEntityId, target.getId(), 0f, "kill",
                     false, System.currentTimeMillis(),
@@ -216,7 +217,7 @@ public final class DamageEventListener {
                 EntityClassifier.classify(isPlayer, mobCategoryName);
 
         String teamId = null;
-        final PlayerTeam team = entity.getTeam();
+        final net.minecraft.world.scores.Team team = entity.getTeam();
         if (team != null) {
             teamId = team.getName();
         }

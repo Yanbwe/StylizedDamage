@@ -104,12 +104,12 @@ public final class ActiveDamageNumber {
     }
 
     /**
-     * Lightweight completion check — compares current tick against the
-     * pre-computed total duration without running the full animation engine.
+     * Lightweight completion check — calls tick() once to get authoritative
+     * AnimationState.isComplete(). This ensures consistent behavior with
+     * renderSingle() which also uses tick() for the animation state.
      */
     public boolean isComplete(final int currentTick) {
-        final int relativeTick = currentTick - createTick;
-        return relativeTick >= resolvedAnimation.totalDuration();
+        return tick((double) currentTick).isComplete();
     }
 
     // ── Accessors ────────────────────────────────────────────────────
