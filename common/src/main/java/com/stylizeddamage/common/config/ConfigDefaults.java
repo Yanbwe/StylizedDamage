@@ -41,15 +41,17 @@ public final class ConfigDefaults {
 
     // ── Total damage panel defaults ────────────────────────────────
     public static final boolean DEFAULT_TOTAL_DAMAGE_ENABLED = true;
-    public static final int DEFAULT_RESET_TIMEOUT = 200;
-    public static final int DEFAULT_MAX_TRAIL_COUNT = 50;
+    public static final int DEFAULT_RESET_TIMEOUT = 100;
+    public static final int DEFAULT_MAX_TRAIL_COUNT = 20;
     public static final double DEFAULT_BASE_FONT_SIZE = 2.0;
     public static final double DEFAULT_SIZE_OFFSET_PER_THOUSAND = 0.5;
     public static final double DEFAULT_SIZE_OFFSET_MAX = 3.0;
+    /** Label text rendered above the total-damage number. */
+    public static final String DEFAULT_LABEL_TEXT = "Damage";
 
-    // ── Total damage panel position defaults ───────────────────────
-    public static final double DEFAULT_TOTAL_DAMAGE_POSITION_X = 0.0;
-    public static final double DEFAULT_TOTAL_DAMAGE_POSITION_Y = 0.0;
+    // ── Total damage panel position defaults (fraction of window size) ──
+    public static final double DEFAULT_TOTAL_DAMAGE_POSITION_X = -0.15;
+    public static final double DEFAULT_TOTAL_DAMAGE_POSITION_Y = 0.15;
 
     // ── Total damage panel animation defaults ──────────────────────
     public static final boolean DEFAULT_ANIM_ENTRY_ENABLED = true;

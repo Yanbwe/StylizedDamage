@@ -8,7 +8,7 @@ license = "MIT"
 # The mods table — at least one [[mods]] entry is required.
 [[mods]]
 modId = "${mod_id}"
-version = "1211.1.1"
+version = "${neoforge_1_21_1_version}"
 displayName = "${mod_name}"
 logoFile = "icon.png"
 

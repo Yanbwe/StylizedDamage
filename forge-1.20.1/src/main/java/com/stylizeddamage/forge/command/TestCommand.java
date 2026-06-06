@@ -97,7 +97,7 @@ public final class TestCommand {
                                     "[DEBUG] enqueuing at (" + pos.x() + "," + pos.y() + ")"), false);
                             final ActiveDamageNumber num = new ActiveDamageNumber(
                                     packet, style, anim, pos,
-                                    renderer.getClientTick(), random, player.getId(),
+                                    System.currentTimeMillis(), random, player.getId(),
                                     0.0, 0.0,
                                     hitX, hitY, hitZ, 1.0);
                             renderer.enqueue(num);

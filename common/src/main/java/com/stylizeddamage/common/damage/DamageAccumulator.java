@@ -19,11 +19,11 @@ import java.util.*;
  * <ol>
  *   <li>Create via {@link #create(TotalDamageConfig)} — starts with zero
  *       damage, empty trail, timer at 0.</li>
- *   <li>Call {@link #accumulate(float, String, int)} whenever a new damage
- *       event occurs — resets the timer to {@code config.resetTimeout()}.</li>
- *   <li>Call {@link #tick(int)} every game tick — decrements the internal
- *       timer. When the timer expires, returns a reset accumulator
- *       (zero damage, empty trail).</li>
+ *   <li>Call {@link #accumulate(float, String, long)} whenever a new damage
+ *       event occurs — records the current wall-clock time.</li>
+ *   <li>Call {@link #tick(long)} every frame — checks whether the
+ *       reset timeout has elapsed since the last damage event. When expired,
+ *       returns a reset accumulator (zero damage, empty trail).</li>
  * </ol>
  *
  * <h3>Trail ordering</h3>
@@ -46,17 +46,18 @@ public final class DamageAccumulator {
 
     private final double totalDamage;
     private final List<TrailEntry> trailList;
-    private final int resetTimer;
+    /** Wall-clock time (ms) of the last damage event; 0 = idle/never damaged. */
+    private final long lastDamageTimeMs;
     private final TotalDamageConfig config;
 
     private DamageAccumulator(double totalDamage,
                               List<TrailEntry> trailList,
-                              int resetTimer,
+                              long lastDamageTimeMs,
                               TotalDamageConfig config) {
         this.totalDamage = totalDamage;
         this.trailList = Collections.unmodifiableList(
                 Objects.requireNonNull(trailList, "trailList must not be null"));
-        this.resetTimer = resetTimer;
+        this.lastDamageTimeMs = lastDamageTimeMs;
         this.config = Objects.requireNonNull(config, "config must not be null");
     }
 
@@ -71,7 +72,7 @@ public final class DamageAccumulator {
      * @return a new, zeroed-out accumulator
      */
     public static DamageAccumulator create(TotalDamageConfig config) {
-        return new DamageAccumulator(0.0, List.of(), 0, config);
+        return new DamageAccumulator(0.0, List.of(), 0L, config);
     }
 
     /**
@@ -92,19 +93,19 @@ public final class DamageAccumulator {
      * the head, truncates the trail list to {@code config.maxTrailCount()},
      * and resets the countdown timer to {@code config.resetTimeout()}.
      *
-     * @param damage    the damage amount (may be positive, zero, or negative)
-     * @param styleName the matched style name for this damage event
-     * @param currentTick the game tick when the damage was dealt
+     * @param damage       the damage amount (may be positive, zero, or negative)
+     * @param styleName    the matched style name for this damage event
+     * @param currentTimeMs the wall-clock time (ms) when the damage was dealt
      * @return a new accumulator with the updated state
      */
-    public DamageAccumulator accumulate(float damage, String styleName, int currentTick) {
+    public DamageAccumulator accumulate(float damage, String styleName, long currentTimeMs) {
         Objects.requireNonNull(styleName, "styleName must not be null");
 
         double newTotal = totalDamage + damage;
 
         // Build new trail list: new entry at head, then existing entries
         List<TrailEntry> newTrail = new ArrayList<>(config.maxTrailCount() + 1);
-        newTrail.add(new TrailEntry(damage, styleName, currentTick));
+        newTrail.add(new TrailEntry(damage, styleName, (int) (currentTimeMs / 50L)));
         newTrail.addAll(trailList);
 
         // Truncate to maxTrailCount (remove oldest from tail) — at most one extra
@@ -112,36 +113,30 @@ public final class DamageAccumulator {
             newTrail = new ArrayList<>(newTrail.subList(0, config.maxTrailCount()));
         }
 
-        return new DamageAccumulator(newTotal, newTrail, config.resetTimeout(), config);
+        return new DamageAccumulator(newTotal, newTrail, currentTimeMs, config);
     }
 
     /**
-     * Advances the internal countdown timer by one tick. When the timer
-     * reaches zero or below, the accumulator resets (total damage → 0,
-     * trail cleared, timer → 0).
+     * Checks whether the reset timeout has expired since the last damage event.
+     * When the timer expires, the accumulator resets (total damage → 0,
+     * trail cleared).
      *
      * <p>Callers should replace their reference with the returned instance.
      *
-     * @param currentTick the current game tick (for informational purposes)
+     * @param currentTimeMs the current wall-clock time in milliseconds
      * @return the updated accumulator (may be a reset one if timer expired)
-     * @throws IllegalArgumentException if currentTick is negative
      */
-    public DamageAccumulator tick(int currentTick) {
-        if (currentTick < 0) {
-            throw new IllegalArgumentException("currentTick must be non-negative, got: " + currentTick);
-        }
-
-        // If already at 0 (idle / reset state), stay at 0
-        if (resetTimer <= 0) {
+    public DamageAccumulator tick(long currentTimeMs) {
+        // If idle (no damage ever recorded), stay idle
+        if (lastDamageTimeMs <= 0) {
             return this;
         }
 
-        int newTimer = resetTimer - 1;
-        if (newTimer <= 0) {
+        long timeoutMs = (long) config.resetTimeout() * 50L;
+        if (currentTimeMs - lastDamageTimeMs > timeoutMs) {
             return create(config);
         }
-
-        return new DamageAccumulator(totalDamage, trailList, newTimer, config);
+        return this;
     }
 
     // ── Style matching ────────────────────────────────────────────────
@@ -217,9 +212,9 @@ public final class DamageAccumulator {
         return trailList; // already unmodifiable from constructor
     }
 
-    /** The current value of the countdown timer (ticks until reset). */
-    public int resetTimer() {
-        return resetTimer;
+    /** The wall-clock time (ms) of the last damage event; 0 if idle. */
+    public long lastDamageTimeMs() {
+        return lastDamageTimeMs;
     }
 
     /** The configuration this accumulator is bound to. */
@@ -261,20 +256,20 @@ public final class DamageAccumulator {
         if (this == o) return true;
         if (!(o instanceof DamageAccumulator other)) return false;
         return Double.compare(other.totalDamage, totalDamage) == 0
-                && resetTimer == other.resetTimer
+                && lastDamageTimeMs == other.lastDamageTimeMs
                 && trailList.equals(other.trailList)
                 && config.equals(other.config);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(totalDamage, trailList, resetTimer, config);
+        return Objects.hash(totalDamage, trailList, lastDamageTimeMs, config);
     }
 
     @Override
     public String toString() {
         return "DamageAccumulator{total=" + totalDamage
                 + ", trailSize=" + trailList.size()
-                + ", timer=" + resetTimer + "}";
+                + ", lastTime=" + lastDamageTimeMs + "}";
     }
 }

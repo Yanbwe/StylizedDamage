@@ -114,35 +114,30 @@ public record Style(
      */
     private static AnimationConfig defaultAnimation() {
         var none = PhaseConfig.NONE;
-        var zeroXY = OffsetValue.XY.FIXED_ZERO;
         var zeroR = RandomValue.ZERO;
-        var one = RandomValue.fixed(1.0);
-        var r02 = RandomValue.of(0, -2, 2);
-        var r11 = RandomValue.of(0, -1, 1);
-        var r22 = RandomValue.of(0, -2, 2);
 
         // position enter: xy scatter → direction(90°, 20px) float
         var pos = new PositionConfig(
-                PhaseConfig.normal(30, EasingCurve.EASE_OUT),
+                PhaseConfig.normal(5, EasingCurve.EASE_OUT),
                 none,
                 new OffsetValue.XY(RandomValue.of(2, -2, 2), RandomValue.of(2, -2, 2)),
                 new OffsetValue.Direction(RandomValue.of(90, -1, 1), RandomValue.of(20, -2, 2)),
-                zeroXY);
+                OffsetValue.XY.FIXED_ZERO);
 
-        // size enter: 1.3x → 1.0x over 40t, exit: 1.0x → 0 over 40t
+        // size enter: 0.4x → 1.0x over 5t, exit: 1.0x → 0 over 10t
         var size = new SizeConfig(
-                PhaseConfig.normal(40, EasingCurve.EASE_IN_OUT),
-                PhaseConfig.normal(40, EasingCurve.EASE_IN),
-                RandomValue.fixed(0.3), zeroR, RandomValue.fixed(-1));
+                PhaseConfig.normal(5, EasingCurve.EASE_IN_OUT),
+                PhaseConfig.normal(10, EasingCurve.EASE_IN),
+                RandomValue.fixed(-0.6), zeroR, RandomValue.fixed(-1));
 
         var bright = new BrightnessConfig(none, none, zeroR, zeroR);
 
-        // opacity enter: 0 → 1 over 10t, exit: 1 → 0 over 40t
+        // opacity enter: 0 → 1 over 5t, exit: 1 → 0 over 10t
         var opacity = new OpacityConfig(
-                PhaseConfig.normal(10, EasingCurve.EASE_IN_OUT),
-                PhaseConfig.normal(40, EasingCurve.EASE_IN),
-                zeroR, one, zeroR);
+                PhaseConfig.normal(5, EasingCurve.EASE_IN_OUT),
+                PhaseConfig.normal(10, EasingCurve.EASE_IN),
+                zeroR, RandomValue.fixed(1.0), zeroR);
 
-        return new AnimationConfig(10, pos, size, bright, opacity);
+        return new AnimationConfig(5, pos, size, bright, opacity);
     }
 }

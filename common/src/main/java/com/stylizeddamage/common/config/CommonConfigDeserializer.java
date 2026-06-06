@@ -237,6 +237,9 @@ final class CommonConfigDeserializer implements JsonDeserializer<CommonConfig> {
         double bounceScalePeak = getDouble(td, "bounceScalePeak",
                 ConfigDefaults.DEFAULT_BOUNCE_SCALE_PEAK);
 
+        String labelText = getString(td, "labelText",
+                ConfigDefaults.DEFAULT_LABEL_TEXT);
+
         // Parse totalDamage selectors (raw storage)
         Map<String, JsonObject> tdSelectors = new LinkedHashMap<>();
         if (td.has("selectors")) {
@@ -256,7 +259,7 @@ final class CommonConfigDeserializer implements JsonDeserializer<CommonConfig> {
                 positionX, positionY,
                 enableEntryAnimation, enableExitAnimation, enableBounceAnimation,
                 enableTrailEntryAnimation, enableTrailExitAnimation,
-                bounceScalePeak);
+                bounceScalePeak, labelText);
     }
 
     // ── Safe JSON value extraction helpers ─────────────────────────

@@ -69,18 +69,18 @@ public final class StylizedDamageNeoForge {
                 "enabled": true,
                 "baseFontSize": 1.0,
                 "stepSize": 10,
-                "sizeOffsetPerStep": 0.5,
-                "maxSize": 3.0,
+                "sizeOffsetPerStep": 1,
+                "maxSize": 2.5,
                 "holdBase": 0,
-                "holdOffsetPerStep": 20,
-                "holdMax": 140
+                "holdOffsetPerStep": 10,
+                "holdMax": 20
               },
               "animation": {
-                "hold": 20,
+                "hold": 5,
                 "position": {
                   "enter": {
                     "type": "normal",
-                    "duration": 30,
+                    "duration": 5,
                     "easing": { "in": false, "out": true },
                     "startOffset": { "type": "xy", "x": { "base": 2, "random": [-2, 2] }, "y": { "base": 2, "random": [-2, 2] } },
                     "targetOffset": { "type": "direction", "angle": { "base": 90, "random": [-1, 1] }, "distance": { "base": 20, "random": [-2, 2] } }
@@ -90,14 +90,14 @@ public final class StylizedDamageNeoForge {
                 "size": {
                   "enter": {
                     "type": "normal",
-                    "duration": 40,
+                    "duration": 5,
                     "easing": { "in": true, "out": true },
-                    "startOffset": 0.3,
+                    "startOffset": -0.6,
                     "targetOffset": 0
                   },
                   "exit": {
                     "type": "normal",
-                    "duration": 40,
+                    "duration": 10,
                     "easing": { "in": true, "out": false },
                     "targetOffset": -1
                   }
@@ -109,14 +109,14 @@ public final class StylizedDamageNeoForge {
                 "opacity": {
                   "enter": {
                     "type": "normal",
-                    "duration": 10,
+                    "duration": 5,
                     "easing": { "in": true, "out": true },
                     "startOpacity": 0,
                     "targetOpacity": 1
                   },
                   "exit": {
                     "type": "normal",
-                    "duration": 40,
+                    "duration": 10,
                     "easing": { "in": true, "out": false },
                     "targetOpacity": 0
                   }
@@ -144,11 +144,11 @@ public final class StylizedDamageNeoForge {
               "killText": "🗡kill!",
               "bypassDisplayOpacity": true,
               "animation": {
-                "hold": 100,
+                "hold": 5,
                 "position": {
                   "enter": {
                     "type": "normal",
-                    "duration": 30,
+                    "duration": 5,
                     "easing": { "in": false, "out": true },
                     "startOffset": { "type": "xy", "x": { "base": 2, "random": [-2, 2] }, "y": { "base": 2, "random": [-2, 2] } },
                     "targetOffset": { "type": "direction", "angle": { "base": 90, "random": [-1, 1] }, "distance": { "base": 20, "random": [-2, 2] } }
@@ -158,14 +158,14 @@ public final class StylizedDamageNeoForge {
                 "size": {
                   "enter": {
                     "type": "normal",
-                    "duration": 40,
+                    "duration": 5,
                     "easing": { "in": true, "out": true },
-                    "startOffset": 0.3,
+                    "startOffset": 1,
                     "targetOffset": 0
                   },
                   "exit": {
                     "type": "normal",
-                    "duration": 40,
+                    "duration": 20,
                     "easing": { "in": true, "out": false },
                     "targetOffset": -1
                   }
@@ -177,14 +177,14 @@ public final class StylizedDamageNeoForge {
                 "opacity": {
                   "enter": {
                     "type": "normal",
-                    "duration": 10,
+                    "duration": 5,
                     "easing": { "in": true, "out": true },
                     "startOpacity": 0,
                     "targetOpacity": 1
                   },
                   "exit": {
                     "type": "normal",
-                    "duration": 40,
+                    "duration": 20,
                     "easing": { "in": true, "out": false },
                     "targetOpacity": 0
                   }
@@ -201,8 +201,8 @@ public final class StylizedDamageNeoForge {
 
     private static final String MAGIC_STYLE_JSON = """
             {
-              "color": "#00FFFF",
-              "prefix": "💔"
+              "color": "#9FFFFF",
+              "prefix": "⭐"
             }""";
 
     /**

@@ -43,7 +43,6 @@ public final class DamageNumberRenderer {
 
     private final Minecraft minecraft;
     private final List<ActiveDamageNumber> activeNumbers = new ArrayList<>();
-    private int clientTick = 0;
 
     public DamageNumberRenderer(final Minecraft minecraft) {
         this.minecraft = Objects.requireNonNull(minecraft, "minecraft");
@@ -63,13 +62,15 @@ public final class DamageNumberRenderer {
 
     /** NeoForge layered draw callback: (GuiGraphics, DeltaTracker). */
     public void renderOverlay(final GuiGraphics guiGraphics, final DeltaTracker deltaTracker) {
-        clientTick++;
         if (!DisplaySettings.isDisplayEnabled()) return;
+
+        // Capture time once — shared by cleanup (tick) and all renderSingle calls
+        final long now = System.currentTimeMillis();
         final float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
         final int screenWidth = minecraft.getWindow().getGuiScaledWidth();
         final int screenHeight = minecraft.getWindow().getGuiScaledHeight();
 
-        tick();
+        tick(now);
 
         final Camera camera = minecraft.gameRenderer.getMainCamera();
         if (camera == null || !camera.isInitialized()) return;
@@ -95,23 +96,23 @@ public final class DamageNumberRenderer {
         // Pass 1: normal numbers (skip kill-type)
         for (final ActiveDamageNumber active : snapshot) {
             if ("kill".equals(active.packet().damageTypeId())) continue;
-            renderSingle(active, guiGraphics, font, camera, player, partialTick, screenWidth, screenHeight, config);
+            renderSingle(active, guiGraphics, font, camera, player, now, screenWidth, screenHeight, config);
         }
 
         // Pass 2: kill numbers (rendered on top)
         for (final ActiveDamageNumber active : snapshot) {
             if (!"kill".equals(active.packet().damageTypeId())) continue;
-            renderSingle(active, guiGraphics, font, camera, player, partialTick, screenWidth, screenHeight, config);
+            renderSingle(active, guiGraphics, font, camera, player, now, screenWidth, screenHeight, config);
         }
     }
 
     // ── Tick ────────────────────────────────────────────────────────────
 
-    private void tick() {
+    private void tick(final long now) {
         synchronized (activeNumbers) {
             final Iterator<ActiveDamageNumber> it = activeNumbers.iterator();
             while (it.hasNext()) {
-                if (it.next().isComplete(clientTick)) it.remove();
+                if (it.next().isComplete(now)) it.remove();
             }
         }
     }
@@ -124,7 +125,7 @@ public final class DamageNumberRenderer {
             final Font font,
             final Camera camera,
             final LocalPlayer player,
-            final float partialTick,
+            final long now,
             final int screenWidth,
             final int screenHeight,
             final CommonConfig config) {
@@ -147,8 +148,8 @@ public final class DamageNumberRenderer {
                 distCfg.min(), distCfg.maxDisplayDistance());
         if (distanceScale <= 0.0) return;
 
-        // 3. Animation state (smooth with partialTick)
-        final AnimationState animState = active.tick(clientTick + partialTick);
+        // 3. Animation state (now in real-time ms)
+        final AnimationState animState = active.tick(now);
 
         // 4. Position offset scaled by distance
         final double posScale = distanceScale / Math.max(style.fontSize(), 0.01);
@@ -163,13 +164,13 @@ public final class DamageNumberRenderer {
         final double finalScale = distanceScale * dmgScale * animState.scale();
 
         // 6. Color
-        final int relativeTick = clientTick - active.createTick();
-        final float progress = Math.max(0f, Math.min(1f, relativeTick / (float) Math.max(1, style.animation().holdTicks() + 10)));
+        final double relativeTick = (now - active.createTimeMs()) / 50.0;
+        final float progress = Math.max(0f, Math.min(1f, (float) relativeTick / (float) Math.max(1, style.animation().holdTicks() + 10)));
         final ColorSource colorSource = style.color();
         final double finalOpacity = style.bypassDisplayOpacity()
                 ? animState.opacity()
                 : animState.opacity() * active.displayOpacity();
-        int argb = ColorRenderer.toArgb(colorSource, progress, clientTick,
+        int argb = ColorRenderer.toArgb(colorSource, progress, (int) relativeTick,
                 animState.brightnessOffset(),
                 finalOpacity);
         if (!animState.isComplete() && (argb >>> 24) == 0) {
@@ -222,7 +223,7 @@ public final class DamageNumberRenderer {
         synchronized (activeNumbers) { activeNumbers.add(number); }
     }
 
-    public int getClientTick() { return clientTick; }
+    public long getCurrentTimeMs() { return System.currentTimeMillis(); }
 
     public int getScreenCenterX() { return minecraft.getWindow().getGuiScaledWidth() / 2; }
 

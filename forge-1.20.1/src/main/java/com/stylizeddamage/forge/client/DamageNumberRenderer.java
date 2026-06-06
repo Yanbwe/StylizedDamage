@@ -63,8 +63,7 @@ public final class DamageNumberRenderer {
     /** The active damage numbers currently being animated/rendered. */
     private final List<ActiveDamageNumber> activeNumbers = new ArrayList<>();
 
-    /** Client tick counter, incremented once per frame. */
-    private int clientTick = 0;
+
 
     /**
      * Creates the renderer without registering on the mod bus.
@@ -113,7 +112,9 @@ public final class DamageNumberRenderer {
             return;
         }
 
-        tick();
+        // Capture time once — shared by cleanup (tick) and all renderSingle calls
+        final long now = System.currentTimeMillis();
+        tick(now);
 
         final Camera camera = minecraft.gameRenderer.getMainCamera();
         if (camera == null || !camera.isInitialized()) {
@@ -150,14 +151,14 @@ public final class DamageNumberRenderer {
         // Pass 1: normal numbers (skip kill-type)
         for (final ActiveDamageNumber active : snapshot) {
             if ("kill".equals(active.packet().damageTypeId())) continue;
-            renderSingle(active, guiGraphics, font, camera, player, partialTick,
+            renderSingle(active, guiGraphics, font, camera, player, now, partialTick,
                     screenWidth, screenHeight, config);
         }
 
         // Pass 2: kill numbers (rendered on top)
         for (final ActiveDamageNumber active : snapshot) {
             if (!"kill".equals(active.packet().damageTypeId())) continue;
-            renderSingle(active, guiGraphics, font, camera, player, partialTick,
+            renderSingle(active, guiGraphics, font, camera, player, now, partialTick,
                     screenWidth, screenHeight, config);
         }
     }
@@ -165,19 +166,19 @@ public final class DamageNumberRenderer {
     // ── Tick: advance animations, remove completed ────────────────────
 
     /**
-     * Advances the client tick counter and removes completed numbers.
+     * Removes completed numbers from the active list.
      * Animation state is advanced in renderSingle per-number to avoid
      * double-advancing (once here, once in render).
+     *
+     * @param now the wall-clock timestamp shared with renderSingle for consistency
      */
-    private void tick() {
-        clientTick++;
-
+    private void tick(final long now) {
         synchronized (activeNumbers) {
             final Iterator<ActiveDamageNumber> it = activeNumbers.iterator();
             while (it.hasNext()) {
                 final ActiveDamageNumber active = it.next();
                 // Only check completion — animation state is advanced in renderSingle
-                if (active.isComplete(clientTick)) {
+                if (active.isComplete(now)) {
                     it.remove();
                 }
             }
@@ -206,6 +207,7 @@ public final class DamageNumberRenderer {
             final Font font,
             final Camera camera,
             final LocalPlayer player,
+            final long now,
             final float partialTick,
             final int screenWidth,
             final int screenHeight,
@@ -241,8 +243,8 @@ public final class DamageNumberRenderer {
             return; // Beyond max display distance
         }
 
-        // ── 3. Animation state (interpolated with partialTick for smooth 60fps) ──
-        final AnimationState animState = active.tick(clientTick + partialTick);
+        // ── 3. Animation state (advances using system time) ──
+        final AnimationState animState = active.tick(now);
 
         // ── 4. Apply animation position offset scaled by distance ──
         final double posScale = distanceScale / Math.max(style.fontSize(), 0.01);
@@ -262,16 +264,16 @@ public final class DamageNumberRenderer {
         final double finalScale = distanceScale * dmgScale * animState.scale();
 
         // ── 6. Colour resolution ──
-        final int relativeTick = clientTick - active.createTick();
+        final double relativeTick = (now - active.createTimeMs()) / 50.0;
         final float progress = Math.max(0f, Math.min(1f,
-                relativeTick / (float) Math.max(1, style.animation().holdTicks() + 10)));
+                (float) (relativeTick / (double) Math.max(1, style.animation().holdTicks() + 10))));
 
         final ColorSource colorSource = style.color();
         final double finalOpacity = style.bypassDisplayOpacity()
                 ? animState.opacity()
                 : animState.opacity() * active.displayOpacity();
         int argb = ColorRenderer.toArgb(
-                colorSource, progress, clientTick,
+                colorSource, progress, (int) relativeTick,
                 animState.brightnessOffset(),
                 finalOpacity);
 
@@ -369,10 +371,10 @@ public final class DamageNumberRenderer {
     }
 
     /**
-     * Returns the current client tick counter.
+     * Returns the current system time in milliseconds.
      */
-    public int getClientTick() {
-        return clientTick;
+    public long getCurrentTimeMs() {
+        return System.currentTimeMillis();
     }
 
     /** Returns the screen center X coordinate. */

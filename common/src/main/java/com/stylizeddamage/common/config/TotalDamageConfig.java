@@ -26,14 +26,15 @@ import java.util.Map;
  * @param sizeOffsetPerThousand  size increase per 100 total damage
  * @param sizeOffsetMax          maximum font size multiplier
  * @param selectors              raw interval→style selectors (keys: "common", "[100,...]", etc.)
- * @param positionX              horizontal offset in pixels (positive = right)
- * @param positionY              vertical offset in pixels (positive = down)
+ * @param positionX              horizontal offset as fraction of window width (e.g. -0.1 = 10% left)
+ * @param positionY              vertical offset as fraction of window height (e.g. 0.1 = 10% down)
  * @param enableEntryAnimation   whether total-damage number plays an entry animation
  * @param enableExitAnimation    whether total-damage number plays an exit animation
  * @param enableBounceAnimation  whether total-damage number bounces on value change
  * @param enableTrailEntryAnimation whether trail entries slide in from the right
  * @param enableTrailExitAnimation  whether trail entries slide out to the left
  * @param bounceScalePeak           peak scale multiplier during bounce (e.g. 1.4 = 140% size at peak)
+ * @param labelText                 text displayed above the total-damage number (e.g. "Damage")
  */
 public record TotalDamageConfig(
         boolean enabled,
@@ -50,7 +51,8 @@ public record TotalDamageConfig(
         boolean enableBounceAnimation,
         boolean enableTrailEntryAnimation,
         boolean enableTrailExitAnimation,
-        double bounceScalePeak) {
+        double bounceScalePeak,
+        String labelText) {
 
     /** Compact constructor — validates and provides defaults. */
     public TotalDamageConfig {
@@ -68,6 +70,9 @@ public record TotalDamageConfig(
         }
         if (bounceScalePeak <= 1.0) {
             bounceScalePeak = ConfigDefaults.DEFAULT_BOUNCE_SCALE_PEAK;
+        }
+        if (labelText == null || labelText.isBlank()) {
+            labelText = ConfigDefaults.DEFAULT_LABEL_TEXT;
         }
     }
 
@@ -88,7 +93,8 @@ public record TotalDamageConfig(
                 ConfigDefaults.DEFAULT_ANIM_BOUNCE_ENABLED,
                 ConfigDefaults.DEFAULT_ANIM_TRAIL_ENTRY_ENABLED,
                 ConfigDefaults.DEFAULT_ANIM_TRAIL_EXIT_ENABLED,
-                ConfigDefaults.DEFAULT_BOUNCE_SCALE_PEAK);
+                ConfigDefaults.DEFAULT_BOUNCE_SCALE_PEAK,
+                ConfigDefaults.DEFAULT_LABEL_TEXT);
     }
 
     private static Map<String, JsonObject> defaultSelectors() {

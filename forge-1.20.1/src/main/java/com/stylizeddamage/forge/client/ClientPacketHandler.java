@@ -172,9 +172,9 @@ public final class ClientPacketHandler implements PacketHandler {
         final double displayOpacity = computeDisplayOpacity(sourceEntity != null ? sourceEntity : entity);
 
         // ── Create the ActiveDamageNumber ──
-        final int tick = renderer.getClientTick();
+        final long now = System.currentTimeMillis();
         final ActiveDamageNumber activeNumber = new ActiveDamageNumber(
-                packet, style, resolvedAnim, zeroPos, tick, random, entityId,
+                packet, style, resolvedAnim, zeroPos, now, random, entityId,
                 0.0, 0.0, wx, wy, wz, displayOpacity);
 
         // ── Enqueue (renderer handles overlap and max queue limits) ──

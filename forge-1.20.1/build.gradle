@@ -4,6 +4,11 @@ plugins {
     id 'org.spongepowered.mixin' version '0.7.+'
 }
 
+version = project.property('forge_1_20_1_version')
+base {
+    archivesName = project.property('mod_id')
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
@@ -55,4 +60,15 @@ tasks.named('compileJava').configure {
 
 tasks.named('jar').configure {
     dependsOn 'copyCommonClasses'
+}
+
+// Expand ${...} placeholders in mods.toml at build time
+processResources {
+    var replaceProperties = [
+        forge_1_20_1_version: project.property('forge_1_20_1_version')
+    ]
+    inputs.properties replaceProperties
+    filesMatching('META-INF/mods.toml') {
+        expand replaceProperties
+    }
 }

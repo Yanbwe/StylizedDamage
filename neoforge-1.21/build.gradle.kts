@@ -6,6 +6,11 @@ plugins {
     id("net.neoforged.moddev") version "2.0.115"
 }
 
+version = project.property("neoforge_1_21_1_version") as String
+base {
+    archivesName = project.property("mod_id") as String
+}
+
 java {
     toolchain {
         // Java 21 required for Minecraft 1.21.x

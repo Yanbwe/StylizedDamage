@@ -3,11 +3,11 @@
 
 modLoader="javafml"
 loaderVersion="[47,)"
-license="MIT License"
+license="GPLv3"
 
 [[mods]]
 modId="stylizeddamage"
-version="1201.1.1"
+version="${forge_1_20_1_version}"
 displayName="StylizedDamage"
 authors="Yanbwe"
 description='''

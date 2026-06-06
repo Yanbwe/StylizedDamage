@@ -94,11 +94,11 @@ public final class ClientPacketHandler implements PacketHandler {
                     minecraft.getWindow().getGuiScaledWidth() / 2,
                     minecraft.getWindow().getGuiScaledHeight() / 2);
         }
-        final int tick = renderer.getClientTick();
+        final long now = System.currentTimeMillis();
         final Entity sourceEntity = getEntityById(packet.sourceEntityId());
         final double displayOpacity = computeDisplayOpacity(sourceEntity != null ? sourceEntity : entity);
         final ActiveDamageNumber activeNumber = new ActiveDamageNumber(
-                packet, style, resolvedAnim, zeroPos, tick, random, entityId,
+                packet, style, resolvedAnim, zeroPos, now, random, entityId,
                 0.0, 0.0, wx, wy, wz, displayOpacity);
         renderer.enqueue(activeNumber);
     }

@@ -59,12 +59,12 @@ public final class TotalDamageHudRenderer {
     private static final class TrailAnimState {
         final TrailEntry entry;
         TrailPhase phase;
-        int tick;
+        long startTimeMs;
 
-        TrailAnimState(TrailEntry entry, TrailPhase phase, int tick) {
+        TrailAnimState(TrailEntry entry, TrailPhase phase, long startTimeMs) {
             this.entry = entry;
             this.phase = phase;
-            this.tick = tick;
+            this.startTimeMs = startTimeMs;
         }
     }
 
@@ -75,9 +75,10 @@ public final class TotalDamageHudRenderer {
 
     // ── Animation state ─────────────────────────────────────────────
     private TotalPhase totalPhase = TotalPhase.INACTIVE;
-    private int totalAnimTick;
+    private long totalAnimStartMs;
     private double prevTotalDamage;
-    private int bounceTick;
+    private long bounceStartMs;
+    private long renderTimeMs;
     private final List<TrailAnimState> trailAnimStates = new ArrayList<>();
 
     public TotalDamageHudRenderer(Minecraft minecraft) {
@@ -101,7 +102,8 @@ public final class TotalDamageHudRenderer {
         synchronized (this) {
             final float oldTotal = accumulator.totalDamage();
             final TotalDamageConfig config = getTotalDamageConfig();
-            accumulator = accumulator.accumulate(damage, styleName, currentTick());
+            final long now = System.currentTimeMillis();
+            accumulator = accumulator.accumulate(damage, styleName, now);
             final float newTotal = accumulator.totalDamage();
 
             // Phase transitions
@@ -109,16 +111,16 @@ public final class TotalDamageHudRenderer {
                     && oldTotal <= 0f && newTotal > 0f
                     && totalPhase != TotalPhase.ENTERING) {
                 totalPhase = TotalPhase.ENTERING;
-                totalAnimTick = 0;
-                bounceTick = 1;
+                totalAnimStartMs = now;
+                bounceStartMs = now;
             } else if (totalPhase == TotalPhase.EXITING) {
                 if (config.enableEntryAnimation()) {
                     totalPhase = TotalPhase.ENTERING;
-                    totalAnimTick = 0;
+                    totalAnimStartMs = now;
                 } else {
                     totalPhase = TotalPhase.ACTIVE;
                 }
-                bounceTick = 1;
+                bounceStartMs = now;
             }
 
             // Bounce on value change
@@ -126,11 +128,11 @@ public final class TotalDamageHudRenderer {
                     && newTotal > 0f
                     && Math.abs(newTotal - prevTotalDamage) > 0.001f
                     && newTotal != oldTotal) {
-                bounceTick = 1;
+                bounceStartMs = now;
             }
             prevTotalDamage = newTotal;
 
-            syncTrailEntries(config);
+            syncTrailEntries(config, now);
         }
     }
 
@@ -143,13 +145,13 @@ public final class TotalDamageHudRenderer {
                         && totalPhase != TotalPhase.EXITING
                         && totalPhase != TotalPhase.INACTIVE) {
                     totalPhase = TotalPhase.EXITING;
-                    totalAnimTick = 0;
+                    totalAnimStartMs = System.currentTimeMillis();
                 }
                 markAllTrailExiting();
             } else {
                 totalPhase = TotalPhase.INACTIVE;
-                totalAnimTick = 0;
-                bounceTick = 0;
+                totalAnimStartMs = 0;
+                bounceStartMs = 0;
                 trailAnimStates.clear();
             }
             accumulator = DamageAccumulator.create(config);
@@ -165,9 +167,10 @@ public final class TotalDamageHudRenderer {
         if (font == null) return;
 
         final int screenWidth = minecraft.getWindow().getGuiScaledWidth();
-        final int currentTick = currentTick();
+        final int screenHeight = minecraft.getWindow().getGuiScaledHeight();
+        final long now = System.currentTimeMillis();
 
-        tickAnimations(currentTick);
+        tickAnimations(now);
 
         final DamageAccumulator acc = this.accumulator;
         final TotalDamageConfig config = acc.config();
@@ -176,21 +179,21 @@ public final class TotalDamageHudRenderer {
 
         // Tick accumulator & detect timer-expiry reset
         final float oldTotal = acc.totalDamage();
-        final DamageAccumulator tickedAcc = acc.tick(currentTick);
+        final DamageAccumulator tickedAcc = acc.tick(now);
         final boolean resetDetected = oldTotal > 0f && tickedAcc.totalDamage() <= 0f
                 && tickedAcc.trailList().isEmpty();
 
         if (resetDetected && config.enableExitAnimation()) {
             if (totalPhase != TotalPhase.EXITING && totalPhase != TotalPhase.INACTIVE) {
                 totalPhase = TotalPhase.EXITING;
-                totalAnimTick = 0;
+                totalAnimStartMs = now;
                 markAllTrailExiting();
             }
         } else if (resetDetected) {
             // Exit animation disabled — reset instantly
             totalPhase = TotalPhase.INACTIVE;
-            totalAnimTick = 0;
-            bounceTick = 0;
+            totalAnimStartMs = 0;
+            bounceStartMs = 0;
             trailAnimStates.clear();
             this.accumulator = tickedAcc;
         } else {
@@ -203,8 +206,8 @@ public final class TotalDamageHudRenderer {
                 || latestCfg.maxTrailCount() != config.maxTrailCount()) {
             this.accumulator = DamageAccumulator.create(latestCfg);
             totalPhase = TotalPhase.INACTIVE;
-            totalAnimTick = 0;
-            bounceTick = 0;
+            totalAnimStartMs = 0;
+            bounceStartMs = 0;
             trailAnimStates.clear();
             return;
         }
@@ -221,8 +224,8 @@ public final class TotalDamageHudRenderer {
         // Layout
         final int baseRightMargin = 16;
         final int baseTopStart = 16;
-        final int rightMargin = baseRightMargin - (int) latestCfg.positionX();
-        final int topStart = baseTopStart + (int) latestCfg.positionY();
+        final int rightMargin = baseRightMargin - (int) (latestCfg.positionX() * screenWidth);
+        final int topStart = baseTopStart + (int) (latestCfg.positionY() * screenHeight);
 
         // ── Total damage number ─────────────────────────────────────
         final String totalStyleName = this.accumulator.getTotalStyleName();
@@ -232,6 +235,21 @@ public final class TotalDamageHudRenderer {
         final float totalAlpha = computeTotalAlpha();
         final float totalScaleMul = computeTotalScaleMultiplier(latestCfg);
         final float totalScale = (float) fontSize * totalScaleMul;
+
+        int currentY = topStart;
+
+        // ── Render label above total damage ──────────────────────────
+        final String labelText = latestCfg.labelText();
+        if (!labelText.isEmpty() && totalAlpha > 0.01f) {
+            final float labelScale = (float) latestCfg.baseFontSize() * 0.5f * totalScaleMul;
+            final int labelArgb = applyAlpha(0xFFFFFFFF, totalAlpha);
+            final int labelTextWidth = (int) (font.width(labelText) * labelScale);
+            final int labelTextHeight = (int) (font.lineHeight * labelScale);
+            final int labelX = screenWidth - rightMargin - labelTextWidth;
+            drawText(guiGraphics, font, labelText, labelX, currentY,
+                    labelScale, labelArgb, false, -1);
+            currentY += labelTextHeight + 2;
+        }
 
         final String totalPrefix = totalStyle != null ? totalStyle.prefix() : "";
         final String totalSuffix = totalStyle != null ? totalStyle.suffix() : "";
@@ -246,12 +264,11 @@ public final class TotalDamageHudRenderer {
         final int rawTotalX = screenWidth - rightMargin - totalTextWidth;
         final boolean totalIconRight = totalStyle != null && "right".equals(totalStyle.iconPosition());
         final int totalIconW = totalStyle != null
-                ? drawIcon(guiGraphics, totalStyle.icon(), rawTotalX, topStart,
+                ? drawIcon(guiGraphics, totalStyle.icon(), rawTotalX, currentY,
                         totalTextHeight, totalScale, totalArgb, totalIconRight, totalTextWidth,
                         totalStyle.iconOffsetX(), totalStyle.iconOffsetY())
                 : 0;
         final int totalX = totalIconRight ? rawTotalX : rawTotalX + totalIconW;
-        int currentY = topStart;
 
         drawText(guiGraphics, font, totalText, totalX, currentY,
                 totalScale, totalArgb, totalStyle != null && totalStyle.shadow(), totalOutline);
@@ -294,13 +311,13 @@ public final class TotalDamageHudRenderer {
 
         // Cleanup
         trailAnimStates.removeIf(tas ->
-                tas.phase == TrailPhase.EXITING && tas.tick >= TRAIL_EXIT_TICKS);
+                tas.phase == TrailPhase.EXITING && (now - tas.startTimeMs) / 50.0 >= TRAIL_EXIT_TICKS);
 
         if (totalPhase == TotalPhase.EXITING
-                && totalAnimTick >= TOTAL_EXIT_TICKS
+                && (now - totalAnimStartMs) / 50.0 >= TOTAL_EXIT_TICKS
                 && trailAnimStates.stream().noneMatch(t -> t.phase == TrailPhase.EXITING)) {
             totalPhase = TotalPhase.INACTIVE;
-            totalAnimTick = 0;
+            totalAnimStartMs = 0;
             this.accumulator = DamageAccumulator.create(latestCfg);
             trailAnimStates.clear();
         }
@@ -308,26 +325,22 @@ public final class TotalDamageHudRenderer {
 
     // ── Animation tick ─────────────────────────────────────────────────
 
-    private void tickAnimations(int currentTick) {
+    private void tickAnimations(long now) {
+        this.renderTimeMs = now;
+
         switch (totalPhase) {
             case ENTERING:
-                totalAnimTick++;
-                if (totalAnimTick >= TOTAL_ENTRY_TICKS) totalPhase = TotalPhase.ACTIVE;
+                if ((now - totalAnimStartMs) / 50.0 >= TOTAL_ENTRY_TICKS) totalPhase = TotalPhase.ACTIVE;
                 break;
             case EXITING:
-                totalAnimTick++;
                 break;
             default: break;
         }
 
-        if (bounceTick > 0) {
-            bounceTick++;
-            if (bounceTick >= BOUNCE_TICKS) bounceTick = 0;
-        }
+        // Bounce: naturally expires based on elapsed time (no tick increment needed)
 
         for (TrailAnimState tas : trailAnimStates) {
-            tas.tick++;
-            if (tas.phase == TrailPhase.ENTERING && tas.tick >= TRAIL_ENTRY_TICKS) {
+            if (tas.phase == TrailPhase.ENTERING && (now - tas.startTimeMs) / 50.0 >= TRAIL_ENTRY_TICKS) {
                 tas.phase = TrailPhase.ACTIVE;
             }
         }
@@ -335,7 +348,7 @@ public final class TotalDamageHudRenderer {
 
     // ── Trail sync ─────────────────────────────────────────────────────
 
-    private void syncTrailEntries(TotalDamageConfig config) {
+    private void syncTrailEntries(TotalDamageConfig config, long now) {
         List<TrailEntry> currentTrail = accumulator.trailList();
         List<TrailAnimState> newList = new ArrayList<>();
 
@@ -345,9 +358,9 @@ public final class TotalDamageHudRenderer {
                 newList.add(existing);
             } else {
                 if (config.enableTrailEntryAnimation()) {
-                    newList.add(new TrailAnimState(entry, TrailPhase.ENTERING, 0));
+                    newList.add(new TrailAnimState(entry, TrailPhase.ENTERING, now));
                 } else {
-                    newList.add(new TrailAnimState(entry, TrailPhase.ACTIVE, 0));
+                    newList.add(new TrailAnimState(entry, TrailPhase.ACTIVE, now));
                 }
             }
         }
@@ -356,7 +369,7 @@ public final class TotalDamageHudRenderer {
             for (TrailAnimState tas : trailAnimStates) {
                 if (tas.phase != TrailPhase.EXITING && !currentTrail.contains(tas.entry)) {
                     tas.phase = TrailPhase.EXITING;
-                    tas.tick = 0;
+                    tas.startTimeMs = now;
                     newList.add(tas);
                 }
             }
@@ -374,10 +387,11 @@ public final class TotalDamageHudRenderer {
     }
 
     private void markAllTrailExiting() {
+        final long now = System.currentTimeMillis();
         for (TrailAnimState tas : trailAnimStates) {
             if (tas.phase != TrailPhase.EXITING) {
                 tas.phase = TrailPhase.EXITING;
-                tas.tick = 0;
+                tas.startTimeMs = now;
             }
         }
     }
@@ -392,41 +406,44 @@ public final class TotalDamageHudRenderer {
     // ── Animation calculators ──────────────────────────────────────────
 
     private float computeTotalAlpha() {
+        final double totalElapsed = (renderTimeMs - totalAnimStartMs) / 50.0;
         return switch (totalPhase) {
             case INACTIVE -> 0f;
             case ENTERING -> {
-                if (totalAnimTick >= TOTAL_ENTRY_TICKS) yield 1f;
-                float t = (float) totalAnimTick / TOTAL_ENTRY_TICKS;
+                if (totalElapsed >= TOTAL_ENTRY_TICKS) yield 1f;
+                float t = (float) (totalElapsed / TOTAL_ENTRY_TICKS);
                 yield (float) EasingCurve.EASE_OUT.apply(t);
             }
             case ACTIVE -> 1f;
             case EXITING -> {
-                if (totalAnimTick >= TOTAL_EXIT_TICKS) yield 0f;
-                float t = (float) totalAnimTick / TOTAL_EXIT_TICKS;
+                if (totalElapsed >= TOTAL_EXIT_TICKS) yield 0f;
+                float t = (float) (totalElapsed / TOTAL_EXIT_TICKS);
                 yield 1f - (float) EasingCurve.EASE_IN.apply(t);
             }
         };
     }
 
     private float computeTotalScaleMultiplier(TotalDamageConfig cfg) {
-        if (bounceTick > 0 && bounceTick < BOUNCE_TICKS) {
-            float t = (float) bounceTick / BOUNCE_TICKS;
+        final double bounceElapsed = bounceStartMs > 0 ? (renderTimeMs - bounceStartMs) / 50.0 : BOUNCE_TICKS;
+        if (bounceStartMs > 0 && bounceElapsed < BOUNCE_TICKS) {
+            float t = (float) (bounceElapsed / BOUNCE_TICKS);
             float bounce = (float) EasingCurve.EASE_OUT_BACK.apply(t);
             return 1f + (float) ((bounce - 1.0) * (cfg.bounceScalePeak() - 1.0) / 0.08);
         }
 
+        final double totalElapsed = (renderTimeMs - totalAnimStartMs) / 50.0;
         return switch (totalPhase) {
             case INACTIVE -> 1f;
             case ENTERING -> {
-                if (totalAnimTick >= TOTAL_ENTRY_TICKS) yield 1f;
-                float t = (float) totalAnimTick / TOTAL_ENTRY_TICKS;
+                if (totalElapsed >= TOTAL_ENTRY_TICKS) yield 1f;
+                float t = (float) (totalElapsed / TOTAL_ENTRY_TICKS);
                 float eased = (float) EasingCurve.EASE_OUT_BACK.apply(t);
                 yield 0.3f + eased * 0.7f;
             }
             case ACTIVE -> 1f;
             case EXITING -> {
-                if (totalAnimTick >= TOTAL_EXIT_TICKS) yield 0.7f;
-                float t = (float) totalAnimTick / TOTAL_EXIT_TICKS;
+                if (totalElapsed >= TOTAL_EXIT_TICKS) yield 0.7f;
+                float t = (float) (totalElapsed / TOTAL_EXIT_TICKS);
                 float eased = (float) EasingCurve.EASE_IN.apply(t);
                 yield 1f - eased * 0.3f;
             }
@@ -434,33 +451,35 @@ public final class TotalDamageHudRenderer {
     }
 
     private float computeTrailAlpha(TrailAnimState tas) {
+        final double elapsed = (renderTimeMs - tas.startTimeMs) / 50.0;
         return switch (tas.phase) {
             case ENTERING -> {
-                if (tas.tick >= TRAIL_ENTRY_TICKS) yield 1f;
-                float t = (float) tas.tick / TRAIL_ENTRY_TICKS;
+                if (elapsed >= TRAIL_ENTRY_TICKS) yield 1f;
+                float t = (float) (elapsed / TRAIL_ENTRY_TICKS);
                 yield (float) EasingCurve.EASE_OUT.apply(t);
             }
             case ACTIVE -> 1f;
             case EXITING -> {
-                if (tas.tick >= TRAIL_EXIT_TICKS) yield 0f;
-                float t = (float) tas.tick / TRAIL_EXIT_TICKS;
+                if (elapsed >= TRAIL_EXIT_TICKS) yield 0f;
+                float t = (float) (elapsed / TRAIL_EXIT_TICKS);
                 yield 1f - (float) EasingCurve.EASE_IN.apply(t);
             }
         };
     }
 
     private float computeTrailOffsetX(TrailAnimState tas) {
+        final double elapsed = (renderTimeMs - tas.startTimeMs) / 50.0;
         return switch (tas.phase) {
             case ENTERING -> {
-                if (tas.tick >= TRAIL_ENTRY_TICKS) yield 0f;
-                float t = (float) tas.tick / TRAIL_ENTRY_TICKS;
+                if (elapsed >= TRAIL_ENTRY_TICKS) yield 0f;
+                float t = (float) (elapsed / TRAIL_ENTRY_TICKS);
                 float eased = (float) EasingCurve.EASE_OUT.apply(t);
                 yield 30f * (1f - eased);
             }
             case ACTIVE -> 0f;
             case EXITING -> {
-                if (tas.tick >= TRAIL_EXIT_TICKS) yield -30f;
-                float t = (float) tas.tick / TRAIL_EXIT_TICKS;
+                if (elapsed >= TRAIL_EXIT_TICKS) yield -30f;
+                float t = (float) (elapsed / TRAIL_EXIT_TICKS);
                 float eased = (float) EasingCurve.EASE_IN.apply(t);
                 yield -30f * eased;
             }
@@ -487,10 +506,6 @@ public final class TotalDamageHudRenderer {
     }
 
     // ── Helpers ────────────────────────────────────────────────────────
-
-    private int currentTick() {
-        return minecraft.level != null ? (int) minecraft.level.getGameTime() : 0;
-    }
 
     private static Style resolveStyle(String styleName) {
         try {

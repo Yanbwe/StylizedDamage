@@ -36,12 +36,12 @@ public final class StyleDefaults {
     public static final boolean DEFAULT_BYPASS_DISPLAY_OPACITY = false;
 
     // ── Damage scale defaults ───────────────────────────────────────
-    public static final boolean DEFAULT_DAMAGE_SCALE_ENABLED = false;
+    public static final boolean DEFAULT_DAMAGE_SCALE_ENABLED = true;
     public static final double DEFAULT_DAMAGE_SCALE_BASE = 1.0;
     public static final double DEFAULT_DAMAGE_SCALE_STEP = 10.0;
-    public static final double DEFAULT_DAMAGE_SCALE_OFFSET = 0.5;
-    public static final double DEFAULT_DAMAGE_SCALE_MAX = 3.0;
+    public static final double DEFAULT_DAMAGE_SCALE_OFFSET = 1.0;
+    public static final double DEFAULT_DAMAGE_SCALE_MAX = 2.5;
     public static final double DEFAULT_DAMAGE_SCALE_HOLD_BASE = 0.0;
-    public static final double DEFAULT_DAMAGE_SCALE_HOLD_OFFSET = 40.0;
-    public static final double DEFAULT_DAMAGE_SCALE_HOLD_MAX = 200.0;
+    public static final double DEFAULT_DAMAGE_SCALE_HOLD_OFFSET = 10.0;
+    public static final double DEFAULT_DAMAGE_SCALE_HOLD_MAX = 20.0;
 }

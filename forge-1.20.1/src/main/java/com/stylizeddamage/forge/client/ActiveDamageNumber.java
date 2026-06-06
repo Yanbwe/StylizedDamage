@@ -26,7 +26,7 @@ public final class ActiveDamageNumber {
     private final Style style;
     private final AnimationConfig.Resolved resolvedAnimation;
     private final ScreenPosition screenPosition;
-    private final int createTick;
+    private final long createTimeMs;
     private final Random random;
     private final int entityId;
     private final double overlapOffsetX;
@@ -43,7 +43,7 @@ public final class ActiveDamageNumber {
      * @param style             the resolved visual style to apply
      * @param resolvedAnimation the animation config with all random values fixed
      * @param screenPosition    the initial screen-space position
-     * @param createTick        the client tick at which this number was created
+     * @param createTimeMs      the system time in ms at which this number was created
      * @param random            the random source for any future random usage
      * @param entityId          the network entity ID of the damaged entity (for distance tracking)
      * @param overlapOffsetX    X offset from overlap detection (added to screen position)
@@ -54,7 +54,7 @@ public final class ActiveDamageNumber {
             final Style style,
             final AnimationConfig.Resolved resolvedAnimation,
             final ScreenPosition screenPosition,
-            final int createTick,
+            final long createTimeMs,
             final Random random,
             final int entityId,
             final double overlapOffsetX,
@@ -67,7 +67,7 @@ public final class ActiveDamageNumber {
         this.style = Objects.requireNonNull(style, "style");
         this.resolvedAnimation = Objects.requireNonNull(resolvedAnimation, "resolvedAnimation");
         this.screenPosition = Objects.requireNonNull(screenPosition, "screenPosition");
-        this.createTick = createTick;
+        this.createTimeMs = createTimeMs;
         this.random = Objects.requireNonNull(random, "random");
         this.entityId = entityId;
         this.overlapOffsetX = overlapOffsetX;
@@ -86,21 +86,21 @@ public final class ActiveDamageNumber {
             final Style style,
             final AnimationConfig.Resolved resolvedAnimation,
             final ScreenPosition screenPosition,
-            final int createTick,
+            final long createTimeMs,
             final Random random,
             final int entityId) {
-        this(packet, style, resolvedAnimation, screenPosition, createTick, random, entityId, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+        this(packet, style, resolvedAnimation, screenPosition, createTimeMs, random, entityId, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
     }
 
     /**
      * Advances the animation by computing the state for the given
-     * absolute client tick.
+     * absolute system time.
      *
-     * @param currentTick the current client tick counter
+     * @param currentTimeMs the current system time in milliseconds
      * @return the instantaneous animation state for this frame
      */
-    public AnimationState tick(final double currentTick) {
-        final double relativeTick = currentTick - createTick;
+    public AnimationState tick(final long currentTimeMs) {
+        final double relativeTick = (currentTimeMs - createTimeMs) / 50.0;
         return AnimationEngine.update(relativeTick, resolvedAnimation);
     }
 
@@ -109,8 +109,8 @@ public final class ActiveDamageNumber {
      * AnimationState.isComplete(). This ensures consistent behavior with
      * renderSingle() which also uses tick() for the animation state.
      */
-    public boolean isComplete(final int currentTick) {
-        return tick((double) currentTick).isComplete();
+    public boolean isComplete(final long currentTimeMs) {
+        return tick(currentTimeMs).isComplete();
     }
 
     // ── Accessors ────────────────────────────────────────────────────
@@ -135,9 +135,9 @@ public final class ActiveDamageNumber {
         return screenPosition;
     }
 
-    /** The client tick when this number was queued. */
-    public int createTick() {
-        return createTick;
+    /** The system time in ms when this number was queued. */
+    public long createTimeMs() {
+        return createTimeMs;
     }
 
     /** The random source associated with this number. */
