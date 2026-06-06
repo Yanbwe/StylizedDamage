@@ -123,7 +123,8 @@ public final class StylizedDamageNeoForge {
                     "targetOpacity": 0
                   }
                 }
-              }""";
+              }
+            }""";
 
     private static final String HEAL_STYLE_JSON = """
             {
@@ -327,6 +328,9 @@ public final class StylizedDamageNeoForge {
         var api = StylizedDamageAPI.getInstance();
         var fileSelectors = ConfigManager.getInstance().getConfig().selectors();
         SelectorConfig mergedConfig = api.buildFinalSelectorConfig(fileSelectors);
+        // Expand tag-based selectors (e.g. #minecraft:is_fire) to
+        // individual damage-type IDs so they can be matched correctly.
+        mergedConfig.expandTags();
 
         // Update the selector engine with the merged config.
         // StylizedDamageAPI.initialize() is safe to call multiple times —
