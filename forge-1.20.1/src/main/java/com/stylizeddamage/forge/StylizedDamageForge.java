@@ -126,7 +126,8 @@ public final class StylizedDamageForge {
                     "targetOpacity": 0
                   }
                 }
-              }""";
+              }
+            }""";
 
     private static final String HEAL_STYLE_JSON = """
             {
