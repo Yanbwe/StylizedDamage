@@ -16,6 +16,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -221,10 +222,11 @@ public final class DamageNumberRenderer {
             return;
         }
 
-        // ── 2. Distance-based scaling (uses stored world position; survives entity death) ──
-        final double dx = active.worldX() - player.getX();
-        final double dy = active.worldY() - player.getY();
-        final double dz = active.worldZ() - player.getZ();
+        // ── 2. Distance-based scaling (uses camera position, not player, for freecam compatibility) ──
+        final Vec3 camPos = camera.getPosition();
+        final double dx = active.worldX() - camPos.x;
+        final double dy = active.worldY() - camPos.y;
+        final double dz = active.worldZ() - camPos.z;
         final double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
         final Style style = active.style();
         final DistanceScaleConfig distCfg = config != null
@@ -292,19 +294,19 @@ public final class DamageNumberRenderer {
                 : formatDamage(active.packet().damage());
         final String displayText = prefix + damageText + suffix;
 
-        // ── 7b. Draw icon ──
-        final int ipx = (int) Math.round(posX);
-        final int ipy = (int) Math.round(posY);
+        // ── 7b. Draw icon (rounds to int for pixel-aligned blitting) ──
+        final int iconCenterX = (int) Math.round(posX);
+        final int iconCenterY = (int) Math.round(posY);
         final int textH = (int) (font.lineHeight * finalScale);
         final boolean iconRight = "right".equals(style.iconPosition());
         final int textW = (int) (font.width(displayText) * finalScale);
         final int iconShift = drawIcon(guiGraphics, style.icon(),
-                ipx, ipy, textH, (float) finalScale, argb, iconRight, textW,
+                iconCenterX, iconCenterY, textH, (float) finalScale, argb, iconRight, textW,
                 style.iconOffsetX(), style.iconOffsetY());
 
-        // ── 8. Draw the text (offset by icon shift when icon is on the left) ──
+        // ── 8. Draw the text (sub-pixel position for smooth animation) ──
         drawText(guiGraphics, font, displayText,
-                ipx + iconShift, ipy,
+                posX + iconShift, posY,
                 (float) finalScale, argb, style.shadow());
     }
 
@@ -321,8 +323,8 @@ public final class DamageNumberRenderer {
             final GuiGraphics guiGraphics,
             final Font font,
             final String text,
-            final int x,
-            final int y,
+            final double x,
+            final double y,
             final float scale,
             final int color,
             final boolean shadow) {

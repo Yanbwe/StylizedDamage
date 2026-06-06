@@ -308,11 +308,11 @@ public final class StyleLoader {
 
     private static AnimationConfig parseAnimation(JsonObject json) {
         if (!json.has("animation")) {
-            return defaultAnimation();
+            return Style.createDefault().animation();
         }
         JsonElement elem = json.get("animation");
         if (!elem.isJsonObject()) {
-            return defaultAnimation();
+            return Style.createDefault().animation();
         }
         JsonObject anim = elem.getAsJsonObject();
 
@@ -557,36 +557,6 @@ public final class StyleLoader {
         } catch (NumberFormatException e) {
             return defaultValue;
         }
-    }
-
-    // ── Default animation ───────────────────────────────────────────
-
-    private static AnimationConfig defaultAnimation() {
-        var none = PhaseConfig.NONE;
-        var zeroXY = OffsetValue.XY.FIXED_ZERO;
-        var zeroR = RandomValue.ZERO;
-        var one = RandomValue.fixed(1.0);
-
-        var pos = new PositionConfig(
-                PhaseConfig.normal(30, EasingCurve.EASE_OUT),
-                none,
-                new OffsetValue.XY(RandomValue.of(2, -2, 2), RandomValue.of(2, -2, 2)),
-                new OffsetValue.Direction(RandomValue.of(90, -1, 1), RandomValue.of(20, -2, 2)),
-                zeroXY);
-
-        var size = new SizeConfig(
-                PhaseConfig.normal(40, EasingCurve.EASE_IN_OUT),
-                PhaseConfig.normal(40, EasingCurve.EASE_IN),
-                RandomValue.fixed(0.3), zeroR, RandomValue.fixed(-1));
-
-        var bright = new BrightnessConfig(none, none, zeroR, zeroR);
-
-        var opacity = new OpacityConfig(
-                PhaseConfig.normal(10, EasingCurve.EASE_IN_OUT),
-                PhaseConfig.normal(40, EasingCurve.EASE_IN),
-                zeroR, one, zeroR);
-
-        return new AnimationConfig(10, pos, size, bright, opacity);
     }
 
     // ── Math helpers ────────────────────────────────────────────────

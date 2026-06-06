@@ -18,6 +18,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import org.slf4j.Logger;
@@ -66,7 +67,6 @@ public final class DamageNumberRenderer {
 
         // Capture time once — shared by cleanup (tick) and all renderSingle calls
         final long now = System.currentTimeMillis();
-        final float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
         final int screenWidth = minecraft.getWindow().getGuiScaledWidth();
         final int screenHeight = minecraft.getWindow().getGuiScaledHeight();
 
@@ -136,10 +136,11 @@ public final class DamageNumberRenderer {
                 screenWidth, screenHeight);
         if (screenPos == null) return;
 
-        // 2. Distance scaling (uses stored world position; survives entity death)
-        final double dx = active.worldX() - player.getX();
-        final double dy = active.worldY() - player.getY();
-        final double dz = active.worldZ() - player.getZ();
+        // 2. Distance scaling (uses camera position, not player, for freecam compatibility)
+        final Vec3 camPos = camera.getPosition();
+        final double dx = active.worldX() - camPos.x;
+        final double dy = active.worldY() - camPos.y;
+        final double dz = active.worldZ() - camPos.z;
         final double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
         final Style style = active.style();
         final DistanceScaleConfig distCfg = config != null ? config.distanceScale() : DistanceScaleConfig.defaults();
@@ -186,26 +187,26 @@ public final class DamageNumberRenderer {
                 : formatDamage(active.packet().damage());
         final String displayText = prefix + damageText + suffix;
 
-        // 7b. Draw icon
-        final int ipx = (int) Math.round(posX);
-        final int ipy = (int) Math.round(posY);
+        // 7b. Draw icon (rounds to int for pixel-aligned blitting)
+        final int iconCenterX = (int) Math.round(posX);
+        final int iconCenterY = (int) Math.round(posY);
         final int textH = (int) (font.lineHeight * finalScale);
         final boolean iconRight = "right".equals(style.iconPosition());
         final int textW = (int) (font.width(displayText) * finalScale);
         final int iconShift = drawIcon(guiGraphics, style.icon(),
-                ipx, ipy, textH, (float) finalScale, argb, iconRight, textW,
+                iconCenterX, iconCenterY, textH, (float) finalScale, argb, iconRight, textW,
                 style.iconOffsetX(), style.iconOffsetY());
 
-        // 8. Draw text (offset by icon shift when icon is on the left)
+        // 8. Draw text (sub-pixel position for smooth animation)
         drawText(guiGraphics, font, displayText,
-                ipx + iconShift, ipy,
+                posX + iconShift, posY,
                 (float) finalScale, argb, style.shadow());
     }
 
     // ── Text drawing ────────────────────────────────────────────────────
 
     private void drawText(GuiGraphics guiGraphics, Font font, String text,
-                          int x, int y, float scale, int color, boolean shadow) {
+                          double x, double y, float scale, int color, boolean shadow) {
         if (text.isEmpty() || scale <= 0.01f) return;
         final com.mojang.blaze3d.vertex.PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
