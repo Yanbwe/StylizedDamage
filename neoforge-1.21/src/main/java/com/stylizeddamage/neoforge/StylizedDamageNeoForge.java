@@ -74,11 +74,11 @@ public final class StylizedDamageNeoForge {
                 "sizeOffsetPerStep": 1,
                 "maxSize": 2.5,
                 "holdBase": 0,
-                "holdOffsetPerStep": 10,
+                "holdOffsetPerStep": 5,
                 "holdMax": 20
               },
               "animation": {
-                "hold": 5,
+                "hold": 0,
                 "position": {
                   "enter": {
                     "type": "normal",
@@ -208,6 +208,92 @@ public final class StylizedDamageNeoForge {
               "prefix": "⭐"
             }""";
 
+    // ── Iron's Spells 'n Spellbooks style defaults ────────────────────
+
+    private static final String ISS_FIRE_STYLE_JSON = """
+            {
+              "color": "#FF4500",
+              "prefix": "🔥"
+            }""";
+
+    private static final String ISS_ICE_STYLE_JSON = """
+            {
+              "color": "#00BFFF",
+              "prefix": "❄"
+            }""";
+
+    private static final String ISS_LIGHTNING_STYLE_JSON = """
+            {
+              "color": "#FFD700",
+              "prefix": "⚡"
+            }""";
+
+    private static final String ISS_HOLY_STYLE_JSON = """
+            {
+              "color": "#FFDC9E",
+              "prefix": "✨"
+            }""";
+
+    private static final String ISS_ENDER_STYLE_JSON = """
+            {
+              "color": "#9B30FF",
+              "prefix": "🔮"
+            }""";
+
+    private static final String ISS_BLOOD_STYLE_JSON = """
+            {
+              "color": "#DC143C",
+              "prefix": "🩸"
+            }""";
+
+    private static final String ISS_EVOCATION_STYLE_JSON = """
+            {
+              "color": "#FF69B4",
+              "prefix": "💫"
+            }""";
+
+    private static final String ISS_ELDRITCH_STYLE_JSON = """
+            {
+              "color": "#00FF88",
+              "prefix": "🌌"
+            }""";
+
+    private static final String ISS_NATURE_STYLE_JSON = """
+            {
+              "color": "#228B22",
+              "prefix": "🌿"
+            }""";
+
+    private static final String ISS_CAULDRON_STYLE_JSON = """
+            {
+              "color": "#8B0000",
+              "prefix": "🧪"
+            }""";
+
+    private static final String ISS_HEARTSTOP_STYLE_JSON = """
+            {
+              "color": "#4A0E4E",
+              "prefix": "💔"
+            }""";
+
+    private static final String ISS_DRAGON_BREATH_STYLE_JSON = """
+            {
+              "color": "#9932CC",
+              "prefix": "🐉"
+            }""";
+
+    private static final String ISS_FIRE_FIELD_STYLE_JSON = """
+            {
+              "color": "#FF6347",
+              "prefix": "🔥"
+            }""";
+
+    private static final String ISS_POISON_CLOUD_STYLE_JSON = """
+            {
+              "color": "#7CFC00",
+              "prefix": "💀"
+            }""";
+
     /**
      * Constructs the NeoForge mod instance.
      *
@@ -234,6 +320,21 @@ public final class StylizedDamageNeoForge {
                     {"kill.json", KILL_STYLE_JSON},
                     {"fire.json", FIRE_STYLE_JSON},
                     {"magic.json", MAGIC_STYLE_JSON},
+                    // ── Iron's Spells 'n Spellbooks ─────────────
+                    {"iss_fire.json", ISS_FIRE_STYLE_JSON},
+                    {"iss_ice.json", ISS_ICE_STYLE_JSON},
+                    {"iss_lightning.json", ISS_LIGHTNING_STYLE_JSON},
+                    {"iss_holy.json", ISS_HOLY_STYLE_JSON},
+                    {"iss_ender.json", ISS_ENDER_STYLE_JSON},
+                    {"iss_blood.json", ISS_BLOOD_STYLE_JSON},
+                    {"iss_evocation.json", ISS_EVOCATION_STYLE_JSON},
+                    {"iss_eldritch.json", ISS_ELDRITCH_STYLE_JSON},
+                    {"iss_nature.json", ISS_NATURE_STYLE_JSON},
+                    {"iss_cauldron.json", ISS_CAULDRON_STYLE_JSON},
+                    {"iss_heartstop.json", ISS_HEARTSTOP_STYLE_JSON},
+                    {"iss_dragon_breath.json", ISS_DRAGON_BREATH_STYLE_JSON},
+                    {"iss_fire_field.json", ISS_FIRE_FIELD_STYLE_JSON},
+                    {"iss_poison_cloud.json", ISS_POISON_CLOUD_STYLE_JSON},
             }) {
                 java.nio.file.Path path = stylesDir.resolve(entry[0]);
                 if (!java.nio.file.Files.exists(path)) {

@@ -85,6 +85,35 @@ public record CommonConfig(
         addSelectorRule(rules, "#minecraft:is_fire", "fire");
         addSelectorRule(rules, "kill", "kill");
         addSelectorRule(rules, "#minecraft:bypasses_armor", "magic");
+        // ── Iron's Spells 'n Spellbooks damage types ────────────
+        addSelectorRuleArray(rules,
+                new String[]{"fire_magic", "irons_spellbooks:fire_magic"}, "iss_fire");
+        addSelectorRuleArray(rules,
+                new String[]{"ice_magic", "irons_spellbooks:ice_magic"}, "iss_ice");
+        addSelectorRuleArray(rules,
+                new String[]{"lightning_magic", "irons_spellbooks:lightning_magic"}, "iss_lightning");
+        addSelectorRuleArray(rules,
+                new String[]{"holy_magic", "irons_spellbooks:holy_magic"}, "iss_holy");
+        addSelectorRuleArray(rules,
+                new String[]{"ender_magic", "irons_spellbooks:ender_magic"}, "iss_ender");
+        addSelectorRuleArray(rules,
+                new String[]{"blood_magic", "irons_spellbooks:blood_magic"}, "iss_blood");
+        addSelectorRuleArray(rules,
+                new String[]{"evocation_magic", "irons_spellbooks:evocation_magic"}, "iss_evocation");
+        addSelectorRuleArray(rules,
+                new String[]{"eldritch_magic", "irons_spellbooks:eldritch_magic"}, "iss_eldritch");
+        addSelectorRuleArray(rules,
+                new String[]{"nature_magic", "irons_spellbooks:nature_magic"}, "iss_nature");
+        addSelectorRuleArray(rules,
+                new String[]{"blood_cauldron", "irons_spellbooks:blood_cauldron"}, "iss_cauldron");
+        addSelectorRuleArray(rules,
+                new String[]{"heartstop", "irons_spellbooks:heartstop"}, "iss_heartstop");
+        addSelectorRuleArray(rules,
+                new String[]{"dragon_breath_pool", "irons_spellbooks:dragon_breath_pool"}, "iss_dragon_breath");
+        addSelectorRuleArray(rules,
+                new String[]{"fire_field", "irons_spellbooks:fire_field"}, "iss_fire_field");
+        addSelectorRuleArray(rules,
+                new String[]{"poison_cloud", "irons_spellbooks:poison_cloud"}, "iss_poison_cloud");
         addSelectorRule(rules, "*", ConfigDefaults.DEFAULT_STYLE_NAME);
 
         commonBranch.add("common", rules);
@@ -95,6 +124,21 @@ public record CommonConfig(
     private static void addSelectorRule(JsonArray array, String match, String style) {
         JsonObject rule = new JsonObject();
         rule.addProperty("match", match);
+        rule.addProperty("style", style);
+        array.add(rule);
+    }
+
+    /**
+     * Adds a selector rule with an array of match conditions (OR semantics).
+     * Used for cross-platform damage type matching (short + full registry name).
+     */
+    private static void addSelectorRuleArray(JsonArray array, String[] matches, String style) {
+        JsonObject rule = new JsonObject();
+        JsonArray matchArr = new JsonArray();
+        for (String m : matches) {
+            matchArr.add(m);
+        }
+        rule.add("match", matchArr);
         rule.addProperty("style", style);
         array.add(rule);
     }
