@@ -54,3 +54,18 @@ tasks.jar {
 // Ensure common classes are on the classpath during development runs
 sourceSets.main.get().compileClasspath += project(":common").sourceSets.main.get().output
 sourceSets.main.get().runtimeClasspath += project(":common").sourceSets.main.get().output
+
+// Expand ${...} placeholders in neoforge.mods.toml at build time
+tasks.named<ProcessResources>("processResources") {
+    val replaceProperties = mapOf(
+        "mod_id" to project.property("mod_id") as String,
+        "mod_name" to project.property("mod_name") as String,
+        "mod_authors" to project.property("mod_authors") as String,
+        "mod_description" to project.property("mod_description") as String,
+        "neoforge_1_21_1_version" to project.property("neoforge_1_21_1_version") as String
+    )
+    inputs.properties(replaceProperties)
+    filesMatching("META-INF/neoforge.mods.toml") {
+        expand(replaceProperties)
+    }
+}

@@ -25,3 +25,19 @@ jar {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 }
+
+// Expand ${...} placeholders in neoforge.mods.toml at build time
+processResources {
+    var replaceProperties = [
+        mod_id: project.property('mod_id'),
+        mod_name: project.property('mod_name'),
+        mod_authors: project.property('mod_authors'),
+        mod_description: project.property('mod_description'),
+        neoforge_26_1_version: project.property('neoforge_26_1_version'),
+        neoforge_version_26_1: project.property('neoforge_version_26_1')
+    ]
+    inputs.properties replaceProperties
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand replaceProperties
+    }
+}

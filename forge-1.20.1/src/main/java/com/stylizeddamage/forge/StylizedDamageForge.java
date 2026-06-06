@@ -11,6 +11,7 @@ import com.stylizeddamage.common.selector.SelectorEngine;
 import com.stylizeddamage.common.style.StyleLoader;
 import com.stylizeddamage.forge.client.ClientPacketHandler;
 import com.stylizeddamage.forge.client.DamageNumberRenderer;
+import com.stylizeddamage.forge.client.EntityScreenMapper;
 import com.stylizeddamage.forge.client.TotalDamageHudRenderer;
 import com.stylizeddamage.forge.command.StylizedDamageCommand;
 import com.stylizeddamage.forge.event.AbsorptionTracker;
@@ -19,6 +20,7 @@ import com.stylizeddamage.forge.event.HealEventListener;
 import com.stylizeddamage.forge.network.ForgeNetworkRegistrar;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
@@ -245,6 +247,13 @@ public final class StylizedDamageForge {
      * so the listener is registered before {@code RegisterGuiOverlaysEvent} fires.
      */
     private void clientRegisterOverlays(final IEventBus modEventBus) {
+        // Cache world-render projection matrix for zoom-aware screen projection
+        MinecraftForge.EVENT_BUS.addListener((final RenderLevelStageEvent event) -> {
+            if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+                EntityScreenMapper.cachedProjectionMatrix = event.getProjectionMatrix();
+            }
+        });
+
         modEventBus.addListener((net.minecraftforge.client.event.RegisterGuiOverlaysEvent event) -> {
             final Minecraft minecraft = Minecraft.getInstance();
             

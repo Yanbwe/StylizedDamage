@@ -4,6 +4,7 @@ import com.stylizeddamage.common.damage.ScreenPosition;
 import net.minecraft.client.Camera;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 /**
@@ -13,6 +14,10 @@ import org.joml.Vector3f;
 public final class EntityScreenMapper {
 
     private static final double MIN_FORWARD_DEPTH = 0.05;
+
+    /** Cached world-render projection matrix (set via RenderLevelStageEvent.AFTER_LEVEL).
+     *  Used to extract dynamic FOV for zoom-aware screen projection. */
+    public static volatile Matrix4f cachedProjectionMatrix;
 
     private EntityScreenMapper() {
         throw new AssertionError("Utility class");
@@ -63,26 +68,31 @@ public final class EntityScreenMapper {
             return null;
         }
 
-        // Get FOV from camera's near-plane using public API
+        // Prefer dynamic FOV from cached projection matrix (accounts for spyglass etc.)
         final double tanHalfFovX, tanHalfFovY;
-        final Camera.NearPlane near = camera.getNearPlane();
-        if (near != null) {
-            // Center of near plane = forward vector; its length = near plane distance
-            final Vec3 center = near.getPointOnPlane(0, 0);
-            final double nearDist = center.length();
-            // Top-center = forward + up; distance from center = |up| at near plane
-            final Vec3 topCenter = near.getPointOnPlane(0, 1);
-            final double halfHeightAtNear = topCenter.subtract(center).length();
-            // Right-center = forward - left; distance from center = |left| at near plane
-            final Vec3 rightCenter = near.getPointOnPlane(-1, 0);
-            final double halfWidthAtNear = rightCenter.subtract(center).length();
-            tanHalfFovX = halfWidthAtNear / Math.max(nearDist, 0.01);
-            tanHalfFovY = halfHeightAtNear / Math.max(nearDist, 0.01);
+        final Matrix4f cachedProj = cachedProjectionMatrix;
+        if (cachedProj != null) {
+            // Extract half-FOV tangent from perspective matrix diagonal elements
+            tanHalfFovX = 1.0 / Math.max(Math.abs(cachedProj.m00()), 0.001);
+            tanHalfFovY = 1.0 / Math.max(Math.abs(cachedProj.m11()), 0.001);
         } else {
-            final double aspect = (double) screenWidth / screenHeight;
-            final double tanHalfFovY_fallback = Math.tan(Math.toRadians(35.0));
-            tanHalfFovY = tanHalfFovY_fallback;
-            tanHalfFovX = tanHalfFovY_fallback * aspect;
+            // Fallback: derive from camera near-plane
+            final Camera.NearPlane near = camera.getNearPlane();
+            if (near != null) {
+                final Vec3 center = near.getPointOnPlane(0, 0);
+                final double nearDist = center.length();
+                final Vec3 topCenter = near.getPointOnPlane(0, 1);
+                final double halfHeightAtNear = topCenter.subtract(center).length();
+                final Vec3 rightCenter = near.getPointOnPlane(-1, 0);
+                final double halfWidthAtNear = rightCenter.subtract(center).length();
+                tanHalfFovX = halfWidthAtNear / Math.max(nearDist, 0.01);
+                tanHalfFovY = halfHeightAtNear / Math.max(nearDist, 0.01);
+            } else {
+                final double aspect = (double) screenWidth / screenHeight;
+                final double tanHalfFovY_fallback = Math.tan(Math.toRadians(35.0));
+                tanHalfFovY = tanHalfFovY_fallback;
+                tanHalfFovX = tanHalfFovY_fallback * aspect;
+            }
         }
 
         // Normalized device coordinates: (sx/sz)/tanHalfFovX in [-1, 1]

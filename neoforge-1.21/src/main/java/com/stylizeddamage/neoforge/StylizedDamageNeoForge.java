@@ -10,12 +10,14 @@ import com.stylizeddamage.common.style.StyleLoader;
 import com.stylizeddamage.neoforge.client.ClientPacketHandler;
 import com.stylizeddamage.neoforge.client.DamageNumberRenderer;
 import com.stylizeddamage.neoforge.client.DisplaySettings;
+import com.stylizeddamage.neoforge.client.EntityScreenMapper;
 import com.stylizeddamage.neoforge.client.TotalDamageHudRenderer;
 import com.stylizeddamage.neoforge.network.NeoForgeNetworkRegistrar;
 import net.minecraft.client.Minecraft;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -265,6 +267,13 @@ public final class StylizedDamageNeoForge {
         final TotalDamageHudRenderer totalRenderer = new TotalDamageHudRenderer(Minecraft.getInstance());
         final PacketHandler packetHandler = new ClientPacketHandler(renderer, totalRenderer, Minecraft.getInstance());
         NeoForgePlatform.setPacketHandler(packetHandler);
+
+        // Cache world-render projection matrix for zoom-aware screen projection
+        NeoForge.EVENT_BUS.addListener((final RenderLevelStageEvent event) -> {
+            if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+                EntityScreenMapper.cachedProjectionMatrix = event.getProjectionMatrix();
+            }
+        });
 
         // ── Network registration ─────────────────────────────────────
         // Registers custom payloads (DamageSyncPayload, TotalDamageSyncPayload)
