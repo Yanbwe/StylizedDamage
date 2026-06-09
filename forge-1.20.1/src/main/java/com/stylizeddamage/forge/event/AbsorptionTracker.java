@@ -1,5 +1,7 @@
 package com.stylizeddamage.forge.event;
 
+import com.stylizeddamage.common.config.CommonConfig;
+import com.stylizeddamage.common.config.ConfigManager;
 import com.stylizeddamage.common.network.DamageSyncPacket;
 import com.stylizeddamage.common.network.PacketHandler;
 import net.minecraft.client.Minecraft;
@@ -75,6 +77,12 @@ public final class AbsorptionTracker {
 
         // Only fire for increases (absorption gained), ignore decreases
         if (diff <= 0.0F) {
+            return;
+        }
+
+        // Respect the showAbsorption config toggle
+        final CommonConfig config = ConfigManager.getInstance().getConfig();
+        if (!config.showAbsorption()) {
             return;
         }
 

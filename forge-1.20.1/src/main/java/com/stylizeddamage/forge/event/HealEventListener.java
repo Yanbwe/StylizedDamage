@@ -1,5 +1,7 @@
 package com.stylizeddamage.forge.event;
 
+import com.stylizeddamage.common.config.CommonConfig;
+import com.stylizeddamage.common.config.ConfigManager;
 import com.stylizeddamage.common.network.DamageSyncPacket;
 import com.stylizeddamage.common.network.NetworkRegistrar;
 import net.minecraft.server.level.ServerPlayer;
@@ -54,6 +56,12 @@ public final class HealEventListener {
 
         // Ignore zero or negative heals (should not happen, but guard)
         if (healAmount <= 0.0F) {
+            return;
+        }
+
+        // Respect the showHealing config toggle
+        final CommonConfig config = ConfigManager.getInstance().getConfig();
+        if (!config.showHealing()) {
             return;
         }
 

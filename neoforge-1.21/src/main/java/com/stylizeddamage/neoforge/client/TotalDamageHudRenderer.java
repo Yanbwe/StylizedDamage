@@ -170,12 +170,25 @@ public final class TotalDamageHudRenderer {
         final int screenHeight = minecraft.getWindow().getGuiScaledHeight();
         final long now = System.currentTimeMillis();
 
+        // ── Fetch latest config first (hot-reload-aware) ────────────
+        final TotalDamageConfig latestCfg = getTotalDamageConfig();
+
+        // ── Config-disabled check: force INACTIVE regardless of current phase ──
+        if (!latestCfg.enabled()) {
+            if (totalPhase != TotalPhase.INACTIVE) {
+                totalPhase = TotalPhase.INACTIVE;
+                totalAnimStartMs = 0;
+                bounceStartMs = 0;
+                trailAnimStates.clear();
+                this.accumulator = DamageAccumulator.create(latestCfg);
+            }
+            return;
+        }
+
         tickAnimations(now);
 
         final DamageAccumulator acc = this.accumulator;
         final TotalDamageConfig config = acc.config();
-
-        if (!config.enabled() && totalPhase == TotalPhase.INACTIVE) return;
 
         // Tick accumulator & detect timer-expiry reset
         final float oldTotal = acc.totalDamage();
@@ -200,8 +213,7 @@ public final class TotalDamageHudRenderer {
             this.accumulator = tickedAcc;
         }
 
-        // Hot-reload detection
-        final TotalDamageConfig latestCfg = getTotalDamageConfig();
+        // Hot-reload detection (other config changes)
         if (latestCfg.resetTimeout() != config.resetTimeout()
                 || latestCfg.maxTrailCount() != config.maxTrailCount()) {
             this.accumulator = DamageAccumulator.create(latestCfg);
