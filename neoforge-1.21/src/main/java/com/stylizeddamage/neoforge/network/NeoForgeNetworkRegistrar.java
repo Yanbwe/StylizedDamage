@@ -46,14 +46,18 @@ public final class NeoForgeNetworkRegistrar implements NetworkRegistrar<Entity, 
 
     private static final Logger LOG = LoggerFactory.getLogger(StylizedDamageNeoForge.MOD_ID);
 
-    private final PacketHandler handler;
+    private PacketHandler handler;
 
     /**
      * Creates the network registrar and subscribes to the
      * {@link RegisterPayloadHandlersEvent} on the given mod event bus.
      *
+     * <p>The {@code handler} may be {@code null} when constructed on a
+     * dedicated server; call {@link #setHandler(PacketHandler)} during
+     * client setup before any packets are received.
+     *
      * @param modEventBus the mod-specific event bus (from the {@code @Mod} constructor)
-     * @param handler     the common packet handler for client-side processing
+     * @param handler     the common packet handler for client-side processing (nullable)
      */
     public NeoForgeNetworkRegistrar(IEventBus modEventBus, PacketHandler handler) {
         this.handler = handler;
@@ -61,6 +65,16 @@ public final class NeoForgeNetworkRegistrar implements NetworkRegistrar<Entity, 
         // Register payload types during network setup (IModBusEvent)
         modEventBus.addListener(this::onRegisterPayloads);
         LOG.debug("NeoForgeNetworkRegistrar — listening for RegisterPayloadHandlersEvent");
+    }
+
+    /**
+     * Sets the packet handler after construction.
+     * Called during client setup when the handler becomes available.
+     *
+     * @param handler the common packet handler for client-side processing
+     */
+    public void setHandler(PacketHandler handler) {
+        this.handler = handler;
     }
 
     // ── Payload registration ──────────────────────────────────────────
@@ -98,6 +112,7 @@ public final class NeoForgeNetworkRegistrar implements NetworkRegistrar<Entity, 
      */
     private void handleDamageSync(DamageSyncPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
+            if (handler == null) return;
             DamageSyncPacket packet = payload.toCommon();
             LOG.trace("Client received damage sync: target={}, damage={}, type={}",
                     packet.targetEntityId(), packet.damage(), packet.damageTypeId());
@@ -111,6 +126,7 @@ public final class NeoForgeNetworkRegistrar implements NetworkRegistrar<Entity, 
      */
     private void handleTotalDamageSync(TotalDamageSyncPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
+            if (handler == null) return;
             TotalDamageSyncPacket packet = payload.toCommon();
             LOG.trace("Client received total damage sync: reset={}, damage={}",
                     packet.reset(), packet.damage());

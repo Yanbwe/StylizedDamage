@@ -87,6 +87,10 @@ public final class TotalDamageHudRenderer {
         instance = this;
     }
 
+    public static TotalDamageHudRenderer getInstance() {
+        return instance;
+    }
+
     public static void register(IEventBus modEventBus) {
         modEventBus.addListener(RegisterGuiLayersEvent.class, event -> {
             TotalDamageHudRenderer r = instance != null ? instance

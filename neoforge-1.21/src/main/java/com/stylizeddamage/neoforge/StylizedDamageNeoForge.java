@@ -363,25 +363,12 @@ public final class StylizedDamageNeoForge {
         // Initialized early so third-party mods can query during setup.
         StylizedDamageAPI.initialize(styleLoader, selectorEngine);
 
-        // ── Client-side rendering setup ──────────────────────────────
-        DisplaySettings.setDisplayEnabled(true);
-        final DamageNumberRenderer renderer = new DamageNumberRenderer(Minecraft.getInstance());
-        final TotalDamageHudRenderer totalRenderer = new TotalDamageHudRenderer(Minecraft.getInstance());
-        final PacketHandler packetHandler = new ClientPacketHandler(renderer, totalRenderer, Minecraft.getInstance());
-        NeoForgePlatform.setPacketHandler(packetHandler);
-
-        // Cache world-render projection matrix for zoom-aware screen projection
-        NeoForge.EVENT_BUS.addListener((final RenderLevelStageEvent event) -> {
-            if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
-                EntityScreenMapper.cachedProjectionMatrix = event.getProjectionMatrix();
-            }
-        });
-
         // ── Network registration ─────────────────────────────────────
         // Registers custom payloads (DamageSyncPayload, TotalDamageSyncPayload)
         // via RegisterPayloadHandlersEvent on the mod event bus.
-        NetworkRegistrar<?, ?> networkRegistrar =
-                new NeoForgeNetworkRegistrar(modEventBus, packetHandler);
+        // Handler is null on server; injected during onClientSetup on client.
+        NeoForgeNetworkRegistrar networkRegistrar =
+                new NeoForgeNetworkRegistrar(modEventBus, null);
         NeoForgePlatform.setNetworkRegistrar(networkRegistrar);
 
         // ── Event registration ──────────────────────────────────────
@@ -445,14 +432,55 @@ public final class StylizedDamageNeoForge {
     /**
      * Called during {@code FMLClientSetupEvent}.
      *
-     * <p>Registers client-only event listeners such as the
-     * {@link com.stylizeddamage.neoforge.event.AbsorptionTracker AbsorptionTracker}.
+     * <p>Initialises all client-only systems:
+     * <ul>
+     *   <li>Obtains renderers (lazily created by {@link RegisterGuiLayersEvent})</li>
+     *   <li>Wires the {@link ClientPacketHandler} for incoming damage packets</li>
+     *   <li>Injects the handler into the network registrar</li>
+     *   <li>Registers the {@link RenderLevelStageEvent} listener for projection matrix caching</li>
+     *   <li>Registers client-side event listeners (e.g. {@code AbsorptionTracker})</li>
+     * </ul>
+     *
+     * <p>This method only fires on the physical client, so
+     * {@link Minecraft#getInstance()} is always available.
      *
      * @param event the client setup event
      */
     private void onClientSetup(
             @SuppressWarnings("unused") net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
-        LOG.debug("FMLClientSetup — registering client-side listeners");
+        LOG.debug("FMLClientSetup — initialising client-side systems");
+
+        // Enable display by default
+        DisplaySettings.setDisplayEnabled(true);
+
+        // ── Obtain renderers (created lazily by RegisterGuiLayersEvent) ──
+        // RegisterGuiLayersEvent fires before FMLClientSetupEvent, so
+        // getInstance() is guaranteed to return non-null at this point.
+        final Minecraft minecraft = Minecraft.getInstance();
+        final DamageNumberRenderer renderer = DamageNumberRenderer.getInstance();
+        final TotalDamageHudRenderer totalRenderer = TotalDamageHudRenderer.getInstance();
+
+        // ── Wire packet handler (routes incoming packets to renderers) ──
+        final PacketHandler packetHandler = new ClientPacketHandler(renderer, totalRenderer, minecraft);
+        NeoForgePlatform.setPacketHandler(packetHandler);
+
+        // ── Inject handler into network registrar ────────────────────
+        // The registrar was created in the constructor with a null handler;
+        // now we provide the real client-side handler.
+        final NeoForgeNetworkRegistrar networkRegistrar =
+                (NeoForgeNetworkRegistrar) NeoForgePlatform.getNetworkRegistrar();
+        networkRegistrar.setHandler(packetHandler);
+
+        // ── Cache projection matrix for zoom-aware screen projection ─
+        NeoForge.EVENT_BUS.addListener((final RenderLevelStageEvent event) -> {
+            if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+                EntityScreenMapper.cachedProjectionMatrix = event.getProjectionMatrix();
+            }
+        });
+
+        // ── Register client-side event listeners ─────────────────────
         NeoForgeEventHandler.registerClient();
+
+        LOG.info("StylizedDamage client-side systems initialised");
     }
 }
