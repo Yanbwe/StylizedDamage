@@ -467,14 +467,15 @@ public final class StylizedDamageNeoForge {
         // ── Inject handler into network registrar ────────────────────
         // The registrar was created in the constructor with a null handler;
         // now we provide the real client-side handler.
+        @SuppressWarnings("unchecked")
         final NeoForgeNetworkRegistrar networkRegistrar =
-                (NeoForgeNetworkRegistrar) NeoForgePlatform.getNetworkRegistrar();
+                (NeoForgeNetworkRegistrar) (Object) NeoForgePlatform.getNetworkRegistrar();
         networkRegistrar.setHandler(packetHandler);
 
         // ── Cache projection matrix for zoom-aware screen projection ─
-        NeoForge.EVENT_BUS.addListener((final RenderLevelStageEvent event) -> {
-            if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
-                EntityScreenMapper.cachedProjectionMatrix = event.getProjectionMatrix();
+        NeoForge.EVENT_BUS.addListener((final RenderLevelStageEvent renderEvent) -> {
+            if (renderEvent.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+                EntityScreenMapper.cachedProjectionMatrix = renderEvent.getProjectionMatrix();
             }
         });
 
