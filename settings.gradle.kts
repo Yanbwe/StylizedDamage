@@ -15,4 +15,4 @@ rootProject.name = "StylizedDamage"
 include("common")
 include("forge-1.20.1")
 include("neoforge-1.21")
-include("neoforge-26.1")
+
