@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -124,8 +123,7 @@ public final class ConfigManager {
             try {
                 Files.createDirectories(configDir);
                 CommonConfig defaults = CommonConfig.createDefault();
-                Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
-                Files.writeString(commonJson, prettyGson.toJson(defaults));
+                writePrettyJson(commonJson, defaults);
                 config = defaults;
                 return;
             } catch (IOException e) {
@@ -135,17 +133,56 @@ public final class ConfigManager {
             }
         }
 
-        try (Reader reader = Files.newBufferedReader(commonJson)) {
-            config = gson.fromJson(reader, CommonConfig.class);
-            if (config == null) {
-                config = CommonConfig.createDefault();
-            }
+        // Read raw content first — needed for diff-based auto-fill detection
+        String rawJson;
+        try {
+            rawJson = Files.readString(commonJson);
         } catch (IOException e) {
             LOGGER.error("Failed to read common.json: {} — using defaults", e.getMessage());
             config = CommonConfig.createDefault();
+            return;
+        }
+
+        // Parse config — missing fields are filled with defaults in memory
+        // by CommonConfigDeserializer and the record's compact constructor.
+        try {
+            config = gson.fromJson(rawJson, CommonConfig.class);
+            if (config == null) {
+                config = CommonConfig.createDefault();
+            }
         } catch (Exception e) {
             LOGGER.error("Failed to parse common.json: {} — using defaults", e.getMessage());
             config = CommonConfig.createDefault();
         }
+
+        // Auto-fill any new fields that were added in a mod update
+        // by writing the default-filled config back if it differs.
+        tryAutoFill(commonJson, rawJson);
+    }
+
+    /**
+     * Writes the config back to disk if the default-filled version
+     * differs from the original file content (i.e. new fields were
+     * added in a mod update). Best-effort — failures are logged but
+     * never propagate.
+     */
+    private void tryAutoFill(Path filePath, String originalJson) {
+        try {
+            Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
+            String updatedJson = prettyGson.toJson(config);
+            if (!updatedJson.equals(originalJson)) {
+                Files.writeString(filePath, updatedJson);
+                LOGGER.info("Auto-filled missing fields in common.json");
+            }
+        } catch (Exception e) {
+            // Best-effort: silently skip (read-only dir, disk full, etc.)
+            LOGGER.debug("Auto-fill skipped: {}", e.getMessage());
+        }
+    }
+
+    /** Convenience helper to reduce duplication. */
+    private static void writePrettyJson(Path path, Object obj) throws IOException {
+        Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
+        Files.writeString(path, prettyGson.toJson(obj));
     }
 }
