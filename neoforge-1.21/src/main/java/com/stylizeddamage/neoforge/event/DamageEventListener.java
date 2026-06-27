@@ -125,6 +125,16 @@ public final class DamageEventListener {
 
         boolean shouldShowDamage = filter.shouldDisplay(sourceInfo, targetInfo, isSelf, damage);
 
+        // ── Kill-only display: suppress normal damage when the hit is fatal ──
+        // In Post event, entity.getHealth() is already post-damage value.
+        // Reconstruct pre-damage health to check if the target was at full HP.
+        final boolean isFatalHit = entity.getHealth() <= 0f;
+        final double healthBeforeDamage = entity.getHealth() + damage;
+        final boolean wasFullHP = healthBeforeDamage >= entity.getMaxHealth() - 0.001;
+        final boolean suppressDamageNumbers = config.killOnlyOnMobDeath()
+                && isFatalHit
+                && (!config.killOnlyFullHealth() || wasFullHP);
+
         LOG.trace("Dispatching damage sync: target={}, amount={}, type={}",
                 entity.getName().getString(), damage, damageTypeId);
 
@@ -132,7 +142,7 @@ public final class DamageEventListener {
         @SuppressWarnings("unchecked")
         NetworkRegistrar<Entity, ServerPlayer> registrar = NeoForgePlatform.getNetworkRegistrar();
         if (registrar != null) {
-            if (shouldShowDamage) {
+            if (shouldShowDamage && !suppressDamageNumbers) {
                 registrar.sendToTracking(packet, entity);
             }
 

@@ -49,6 +49,16 @@ public final class ConfigDefaults {
     /** Label text rendered above the total-damage number. */
     public static final String DEFAULT_LABEL_TEXT = "Damage";
 
+    // ── Kill-only display defaults ──────────────────────────────────
+    /** When enabled, killing a mob only shows the "kill" text, not the damage number. */
+    public static final boolean DEFAULT_KILL_ONLY_ON_MOB_DEATH = false;
+    /** When both killOnlyOnMobDeath and this are true, only one-shot kills (full-HP) are affected. */
+    public static final boolean DEFAULT_KILL_ONLY_FULL_HEALTH = false;
+
+    // ── Full-health heal suppression ────────────────────────────────
+    /** When enabled, healing a full-HP entity produces no floating number. */
+    public static final boolean DEFAULT_HIDE_FULL_HEALTH_HEAL = true;
+
     // ── Total damage panel position defaults (fraction of window size) ──
     public static final double DEFAULT_TOTAL_DAMAGE_POSITION_X = -0.15;
     public static final double DEFAULT_TOTAL_DAMAGE_POSITION_Y = 0.15;

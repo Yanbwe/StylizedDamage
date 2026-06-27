@@ -65,6 +65,13 @@ public final class HealEventListener {
             return;
         }
 
+        // When hideFullHealthHeal is enabled, skip healing numbers for
+        // entities that are already at (or very near) full health.
+        if (config.hideFullHealthHeal()
+                && entity.getHealth() >= entity.getMaxHealth() - 0.001) {
+            return;
+        }
+
         final double hitX = entity.getX();
         final double hitY = entity.getY() + entity.getBbHeight() * 0.5;
         final double hitZ = entity.getZ();

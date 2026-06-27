@@ -271,7 +271,7 @@ public final class TotalDamageHudRenderer {
         final String totalSuffix = totalStyle != null ? totalStyle.suffix() : "";
         final String totalText = totalPrefix + formatDamage(totalDamage) + totalSuffix;
 
-        final int totalArgb = applyAlpha(resolveArgb(totalStyle), totalAlpha);
+        final int totalArgb = applyAlpha(resolveArgb(totalStyle, now), totalAlpha);
         final int totalOutline = totalStyle != null && totalStyle.outlineColor() != null
                 ? applyAlpha(totalStyle.outlineColor().argb(), totalAlpha) : -1;
 
@@ -303,7 +303,7 @@ public final class TotalDamageHudRenderer {
             final String entrySuffix = entryStyle != null ? entryStyle.suffix() : "";
             final String entryText = entryPrefix + formatDamage(tas.entry.damage()) + entrySuffix;
 
-            final int entryArgb = applyAlpha(resolveArgb(entryStyle), trailAlpha);
+            final int entryArgb = applyAlpha(resolveArgb(entryStyle, now), trailAlpha);
             final float entryScale = entryStyle != null ? entryStyle.fontSize() : 1.0f;
             final int entryOutline = entryStyle != null && entryStyle.outlineColor() != null
                     ? applyAlpha(entryStyle.outlineColor().argb(), trailAlpha) : -1;
@@ -541,10 +541,11 @@ public final class TotalDamageHudRenderer {
         return Math.max(cfg.baseFontSize(), Math.min(raw, cfg.sizeOffsetMax()));
     }
 
-    private static int resolveArgb(Style style) {
+    private static int resolveArgb(Style style, long timeMs) {
         if (style == null) return 0xFFFFFFFF;
         ColorSource cs = style.color();
-        return com.stylizeddamage.neoforge.client.ColorRenderer.toArgb(cs, 0f, 0, 0.0, 1.0);
+        int tick = (int) (timeMs / 50);
+        return com.stylizeddamage.neoforge.client.ColorRenderer.toArgb(cs, 0f, tick, 0.0, 1.0);
     }
 
     private static int applyAlpha(int argb, float alpha) {

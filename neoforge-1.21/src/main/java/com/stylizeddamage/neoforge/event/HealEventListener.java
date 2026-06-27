@@ -76,6 +76,13 @@ public final class HealEventListener {
             return;
         }
 
+        // When hideFullHealthHeal is enabled, skip healing numbers for
+        // entities that are already at (or very near) full health.
+        if (config.hideFullHealthHeal()
+                && entity.getHealth() >= entity.getMaxHealth() - 0.001) {
+            return;
+        }
+
         int targetEntityId = entity.getId();
         long timestamp = System.currentTimeMillis();
 

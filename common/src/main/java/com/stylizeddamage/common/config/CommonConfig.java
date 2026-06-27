@@ -34,7 +34,10 @@ public record CommonConfig(
         DistanceScaleConfig distanceScale,
         double maxDisplayDistance,
         TotalDamageConfig totalDamage,
-        DisplayOpacityConfig displayOpacity) {
+        DisplayOpacityConfig displayOpacity,
+        boolean killOnlyOnMobDeath,
+        boolean killOnlyFullHealth,
+        boolean hideFullHealthHeal) {
 
     /** Compact constructor — validates and provides defaults. */
     public CommonConfig {
@@ -58,6 +61,8 @@ public record CommonConfig(
         if (displayOpacity == null) {
             displayOpacity = DisplayOpacityConfig.defaults();
         }
+        // killOnlyOnMobDeath, killOnlyFullHealth, hideFullHealthHeal are primitives —
+        // the deserializer always provides explicit defaults, so no null checks needed.
     }
 
     /** Creates a fully-default configuration. */
@@ -72,7 +77,10 @@ public record CommonConfig(
                 DistanceScaleConfig.defaults(),
                 ConfigDefaults.DEFAULT_MAX_DISPLAY_DISTANCE,
                 TotalDamageConfig.defaults(),
-                DisplayOpacityConfig.defaults());
+                DisplayOpacityConfig.defaults(),
+                ConfigDefaults.DEFAULT_KILL_ONLY_ON_MOB_DEATH,
+                ConfigDefaults.DEFAULT_KILL_ONLY_FULL_HEALTH,
+                ConfigDefaults.DEFAULT_HIDE_FULL_HEALTH_HEAL);
     }
 
     private static Map<String, JsonObject> defaultSelectors() {

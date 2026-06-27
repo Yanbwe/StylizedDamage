@@ -49,6 +49,16 @@ final class CommonConfigDeserializer implements JsonDeserializer<CommonConfig> {
         boolean showAbsorption = getBoolean(obj, "showAbsorption",
                 ConfigDefaults.DEFAULT_SHOW_ABSORPTION);
 
+        // ── Kill-only display options ─────────────────────────────────
+        boolean killOnlyOnMobDeath = getBoolean(obj, "killOnlyOnMobDeath",
+                ConfigDefaults.DEFAULT_KILL_ONLY_ON_MOB_DEATH);
+        boolean killOnlyFullHealth = getBoolean(obj, "killOnlyFullHealth",
+                ConfigDefaults.DEFAULT_KILL_ONLY_FULL_HEALTH);
+
+        // ── Full-health heal suppression ──────────────────────────────
+        boolean hideFullHealthHeal = getBoolean(obj, "hideFullHealthHeal",
+                ConfigDefaults.DEFAULT_HIDE_FULL_HEALTH_HEAL);
+
         double maxDisplayDistance = getDouble(obj, "maxDisplayDistance",
                 ConfigDefaults.DEFAULT_MAX_DISPLAY_DISTANCE);
         if (maxDisplayDistance <= 0) {
@@ -57,7 +67,8 @@ final class CommonConfigDeserializer implements JsonDeserializer<CommonConfig> {
 
         return new CommonConfig(selectors, displayFilter, minDamageDisplay,
                 maxActiveNumbers, showHealing, showAbsorption, distanceScale,
-                maxDisplayDistance, totalDamage, displayOpacity);
+                maxDisplayDistance, totalDamage, displayOpacity,
+                killOnlyOnMobDeath, killOnlyFullHealth, hideFullHealthHeal);
     }
 
     // ── Selector parsing (raw storage) ─────────────────────────────

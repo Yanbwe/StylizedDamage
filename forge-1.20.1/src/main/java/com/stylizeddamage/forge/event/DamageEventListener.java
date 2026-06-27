@@ -102,7 +102,17 @@ public final class DamageEventListener {
         final EntityInfo sourceInfo = sourceEntity != null
                 ? classifyEntity(sourceEntity) : targetInfo;
 
-        if (filter.shouldDisplay(sourceInfo, targetInfo, isSelf, damage)) {
+        // ── Kill-only display: suppress normal damage when the hit is fatal ──
+        // If killOnlyOnMobDeath is enabled, only the "kill" pseudo-type is sent;
+        // the normal damage number is suppressed. When killOnlyFullHealth is also
+        // enabled, this only applies to one-shot kills (full-HP targets).
+        final boolean isFatalHit = target.getHealth() <= damage;
+        final boolean wasFullHP = target.getHealth() >= target.getMaxHealth() - 0.001;
+        final boolean suppressDamageNumbers = config.killOnlyOnMobDeath()
+                && isFatalHit
+                && (!config.killOnlyFullHealth() || wasFullHP);
+
+        if (!suppressDamageNumbers && filter.shouldDisplay(sourceInfo, targetInfo, isSelf, damage)) {
             network.sendToTracking(packet, target);
         }
 
