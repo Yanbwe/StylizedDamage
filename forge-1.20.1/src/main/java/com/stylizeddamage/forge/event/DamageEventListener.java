@@ -128,7 +128,8 @@ public final class DamageEventListener {
         // so target.getHealth() returns pre-damage health. A fatal blow is when
         // the remaining health is ≤ the incoming damage.
         // (kill pseudo-type does NOT count toward total damage)
-        if (target.getHealth() <= damage) {
+        // Kill display follows the same filter as damage display
+        if (target.getHealth() <= damage && filter.shouldDisplay(sourceInfo, targetInfo, isSelf, damage)) {
             final DamageSyncPacket killPacket = new DamageSyncPacket(
                     sourceEntityId, target.getId(), 0f, "kill",
                     false, System.currentTimeMillis(),

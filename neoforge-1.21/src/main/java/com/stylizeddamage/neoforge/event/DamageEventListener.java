@@ -154,7 +154,8 @@ public final class DamageEventListener {
             }
 
             // If this damage killed the entity, send a kill notification
-            if (entity.getHealth() <= 0f) {
+            // Kill display follows the same filter as damage display
+            if (entity.getHealth() <= 0f && shouldShowDamage) {
                 DamageSyncPacket killPacket = new DamageSyncPacket(
                         sourceEntityId, targetEntityId, 0f, "kill",
                         false, timestamp,
