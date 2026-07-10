@@ -11,10 +11,12 @@ import java.util.Objects;
  * <p>Each element in {@link #match()} is tested against the damage context
  * according to these rules:
  * <ul>
- *   <li>{@code "*"} — matches any damage (wildcard)</li>
+ *   <li>{@code "*"} — matches any real damage type; excludes the pseudo-types
+ *       {@code kill}, {@code heal}, {@code absorption} (these require explicit rules)</li>
  *   <li>{@code "#"} prefix — tag match (prefix check against the damage type)</li>
- *   <li>{@code "heal"} — healing pseudo-type</li>
- *   <li>{@code "absorption"} — absorption pseudo-type</li>
+ *   <li>{@code "heal"} — healing pseudo-type (matches damage type {@code "heal"})</li>
+ *   <li>{@code "absorption"} — absorption pseudo-type (matches damage type {@code "absorption"})</li>
+ *   <li>{@code "kill"} — kill pseudo-type (matches damage type {@code "kill"})</li>
  *   <li>{@code "critical"} — critical hit flag</li>
  *   <li>otherwise — exact damage type ID match (e.g. {@code "minecraft:in_fire"})</li>
  * </ul>
@@ -72,9 +74,10 @@ public record MatchRule(List<String> match, String style) {
 
         String trimmed = condition.trim();
 
-        // Wildcard — matches anything
+        // Wildcard — matches any real damage type, but never the pseudo-types
+        // "kill", "heal", "absorption". These must be matched by explicit rules.
         if ("*".equals(trimmed)) {
-            return true;
+            return !isPseudoType(damageType);
         }
 
         // Pseudo-type: healing
@@ -100,5 +103,20 @@ public record MatchRule(List<String> match, String style) {
 
         // Exact damage type ID match (e.g. "minecraft:in_fire")
         return trimmed.equals(damageType);
+    }
+
+    /**
+     * Identifies the pseudo damage types that must be matched by explicit
+     * selector rules rather than the wildcard. These are not real Minecraft
+     * damage types emitted by the game.
+     *
+     * @param damageType the damage type identifier to test
+     * @return {@code true} if the type is a pseudo-type ({@code kill},
+     *         {@code heal}, or {@code absorption})
+     */
+    private static boolean isPseudoType(final String damageType) {
+        return "kill".equals(damageType)
+                || "heal".equals(damageType)
+                || "absorption".equals(damageType);
     }
 }
