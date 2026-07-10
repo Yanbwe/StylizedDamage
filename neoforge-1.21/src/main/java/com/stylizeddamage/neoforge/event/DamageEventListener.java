@@ -154,8 +154,12 @@ public final class DamageEventListener {
             }
 
             // If this damage killed the entity, send a kill notification
-            // Kill display follows the same filter as damage display
-            if (entity.getHealth() <= 0f && shouldShowDamage) {
+            // Kill display follows the same filter as damage display, AND
+            // requires a matching selector rule for the "kill" pseudo-type.
+            // If no "kill" rule matches (e.g. omitted from selectors), the
+            // kill popup is suppressed entirely.
+            if (entity.getHealth() <= 0f && shouldShowDamage
+                    && killSelectorMatches(targetInfo)) {
                 DamageSyncPacket killPacket = new DamageSyncPacket(
                         sourceEntityId, targetEntityId, 0f, "kill",
                         false, timestamp,
@@ -226,6 +230,27 @@ public final class DamageEventListener {
      */
     static String extractDamageTypeId(DamageSource source) {
         return source.typeHolder().getKey().location().toString();
+    }
+
+    /**
+     * Determines whether the "kill" pseudo-type has a matching selector rule.
+     * If the user omits "kill" from their {@code selectors} config, this
+     * returns {@code false} and the kill popup is suppressed.
+     *
+     * @param targetInfo classification of the killed entity
+     * @return {@code true} if a selector rule matches the kill pseudo-type
+     */
+    private static boolean killSelectorMatches(EntityInfo targetInfo) {
+        try {
+            var engine = com.stylizeddamage.common.api.StylizedDamageAPI
+                    .getInstance().getSelectorEngine();
+            var match = engine.match(
+                    0f, "kill", targetInfo, targetInfo, false);
+            return match.isPresent();
+        } catch (IllegalStateException e) {
+            // API not initialised — fall back to allowing the kill popup
+            return true;
+        }
     }
 
     /**

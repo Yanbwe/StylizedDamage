@@ -128,8 +128,13 @@ public final class DamageEventListener {
         // so target.getHealth() returns pre-damage health. A fatal blow is when
         // the remaining health is ≤ the incoming damage.
         // (kill pseudo-type does NOT count toward total damage)
-        // Kill display follows the same filter as damage display
-        if (target.getHealth() <= damage && filter.shouldDisplay(sourceInfo, targetInfo, isSelf, damage)) {
+        // Kill display follows the same filter as damage display, AND
+        // requires a matching selector rule for the "kill" pseudo-type.
+        // If no "kill" rule matches (e.g. omitted from selectors), the
+        // kill popup is suppressed entirely.
+        if (target.getHealth() <= damage
+                && filter.shouldDisplay(sourceInfo, targetInfo, isSelf, damage)
+                && killSelectorMatches(targetInfo)) {
             final DamageSyncPacket killPacket = new DamageSyncPacket(
                     sourceEntityId, target.getId(), 0f, "kill",
                     false, System.currentTimeMillis(),
@@ -240,5 +245,26 @@ public final class DamageEventListener {
             case MOB_PASSIVE -> EntityInfo.passiveMob(name);
             case OTHER -> EntityInfo.other(name);
         };
+    }
+
+    /**
+     * Determines whether the "kill" pseudo-type has a matching selector rule.
+     * If the user omits "kill" from their {@code selectors} config, this
+     * returns {@code false} and the kill popup is suppressed.
+     *
+     * @param targetInfo classification of the killed entity
+     * @return {@code true} if a selector rule matches the kill pseudo-type
+     */
+    private static boolean killSelectorMatches(final EntityInfo targetInfo) {
+        try {
+            final var engine = com.stylizeddamage.common.api.StylizedDamageAPI
+                    .getInstance().getSelectorEngine();
+            final var match = engine.match(
+                    0f, "kill", targetInfo, targetInfo, false);
+            return match.isPresent();
+        } catch (final IllegalStateException e) {
+            // API not initialised — fall back to allowing the kill popup
+            return true;
+        }
     }
 }
