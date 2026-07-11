@@ -184,7 +184,7 @@ public final class DamageNumberRenderer {
         final String suffix = style.suffix();
         final String damageText = isKill && style.killText() != null
                 ? style.killText()
-                : formatDamage(active.packet().damage());
+                : Style.formatDamage(active.packet().damage(), style.decimalPlaces());
         final String displayText = prefix + damageText + suffix;
 
         // 7b. Draw icon (rounds to int for pixel-aligned blitting)
@@ -233,11 +233,6 @@ public final class DamageNumberRenderer {
     public CommonConfig getConfig() {
         try { return ConfigManager.getInstance().getConfig(); }
         catch (final IllegalStateException e) { return null; }
-    }
-
-    private static String formatDamage(final float damage) {
-        if (damage == (int) damage) return String.valueOf((int) damage);
-        return String.format("%.1f", damage);
     }
 
     private static int drawIcon(final GuiGraphics guiGraphics, final String iconPath,

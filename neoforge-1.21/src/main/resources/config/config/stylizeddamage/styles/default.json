@@ -4,6 +4,7 @@
   "fontStyle": "bold",
   "shadow": true,
   "outlineColor": "#333333",
+  "decimalPlaces": 1,
   "animation": {
     "hold": 6,
     "position": {

@@ -42,6 +42,7 @@ import java.util.Objects;
  * @param bypassDisplayOpacity  when {@code true}, ignores the global {@code displayOpacity} config
  * @param animation             animation configuration controlling movement, size, brightness, and opacity
  * @param damageScale     damage-value-based automatic font scaling
+ * @param decimalPlaces   decimal places to round the displayed damage value to; integers are shown without decimals
  */
 public record Style(
         ColorSource color,
@@ -60,7 +61,8 @@ public record Style(
         String killText,
         boolean bypassDisplayOpacity,
         AnimationConfig animation,
-        DamageScaleConfig damageScale) {
+        DamageScaleConfig damageScale,
+        int decimalPlaces) {
 
     public Style {
         // ── Required non‑null fields ────────────────────────────────
@@ -79,6 +81,11 @@ public record Style(
         // ── Value validation ─────────────────────────────────────────
         if (fontSize <= 0) {
             fontSize = StyleDefaults.DEFAULT_FONT_SIZE;
+        }
+
+        // ── decimalPlaces validation ─────────────────────────────────
+        if (decimalPlaces < 0) {
+            decimalPlaces = StyleDefaults.DEFAULT_DECIMAL_PLACES;
         }
     }
 
@@ -105,7 +112,8 @@ public record Style(
                 StyleDefaults.DEFAULT_KILL_TEXT,
                 StyleDefaults.DEFAULT_BYPASS_DISPLAY_OPACITY,
                 defaultAnimation(),
-                DamageScaleConfig.defaults());
+                DamageScaleConfig.defaults(),
+                StyleDefaults.DEFAULT_DECIMAL_PLACES);
     }
 
     /**
@@ -139,5 +147,21 @@ public record Style(
                 zeroR, RandomValue.fixed(1.0), zeroR);
 
         return new AnimationConfig(5, pos, size, bright, opacity);
+    }
+
+    /**
+     * 将伤害数值格式化为显示文本。
+     * 整型伤害（如 12.0）显示为整数；小数伤害按 {@code decimalPlaces} 位四舍五入。
+     *
+     * @param damage        原始伤害数值
+     * @param decimalPlaces 保留的小数位数（负值按 1 处理）
+     * @return 格式化后的文本
+     */
+    public static String formatDamage(final float damage, final int decimalPlaces) {
+        if (damage == (int) damage) {
+            return String.valueOf((int) damage);
+        }
+        int places = decimalPlaces < 0 ? StyleDefaults.DEFAULT_DECIMAL_PLACES : decimalPlaces;
+        return String.format("%." + places + "f", damage);
     }
 }

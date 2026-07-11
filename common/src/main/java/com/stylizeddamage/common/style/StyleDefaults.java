@@ -35,6 +35,10 @@ public final class StyleDefaults {
     public static final String DEFAULT_KILL_TEXT = null;
     public static final boolean DEFAULT_BYPASS_DISPLAY_OPACITY = false;
 
+    // ── Decimal places defaults ────────────────────────────────────
+    /** 伤害数值显示保留的小数位数（小于 0 时回退为 1，与现状精确至小数点后一位一致）。 */
+    public static final int DEFAULT_DECIMAL_PLACES = 1;
+
     // ── Damage scale defaults ───────────────────────────────────────
     public static final boolean DEFAULT_DAMAGE_SCALE_ENABLED = true;
     public static final double DEFAULT_DAMAGE_SCALE_BASE = 1.0;

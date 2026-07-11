@@ -58,6 +58,7 @@ public final class StyleBuilder {
     private boolean bypassDisplayOpacity;
     private AnimationConfig animation;
     private DamageScaleConfig damageScale;
+    private int decimalPlaces;
 
     /**
      * Creates a builder bound to a style name and loader.
@@ -84,6 +85,7 @@ public final class StyleBuilder {
         this.killText = StyleDefaults.DEFAULT_KILL_TEXT;
         this.bypassDisplayOpacity = StyleDefaults.DEFAULT_BYPASS_DISPLAY_OPACITY;
         this.damageScale = DamageScaleConfig.defaults();
+        this.decimalPlaces = StyleDefaults.DEFAULT_DECIMAL_PLACES;
     }
 
     // ── Setters (each returns this for chaining) ───────────────────
@@ -255,6 +257,16 @@ public final class StyleBuilder {
         return this;
     }
 
+    /**
+     * 设置伤害数值显示保留的小数位数。
+     * 整型伤害（如 12.0）始终显示为整数；小数伤害按该位数四舍五入。
+     * 取值小于 0 时回退为默认值 1。
+     */
+    public StyleBuilder decimalPlaces(int places) {
+        this.decimalPlaces = places;
+        return this;
+    }
+
     // ── Build / Register ───────────────────────────────────────────
 
     /**
@@ -269,7 +281,7 @@ public final class StyleBuilder {
         return new Style(color, fontSize, fontStyle, shadow, outlineColor,
                 backgroundColor, sound, prefix, suffix, icon, iconPosition,
                 iconOffsetX, iconOffsetY, killText, bypassDisplayOpacity,
-                anim, damageScale);
+                anim, damageScale, decimalPlaces);
     }
 
     /**

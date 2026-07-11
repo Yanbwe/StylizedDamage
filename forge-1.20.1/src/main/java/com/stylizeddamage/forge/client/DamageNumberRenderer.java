@@ -291,7 +291,7 @@ public final class DamageNumberRenderer {
         final String suffix = style.suffix();
         final String damageText = isKill && style.killText() != null
                 ? style.killText()
-                : formatDamage(active.packet().damage());
+                : Style.formatDamage(active.packet().damage(), style.decimalPlaces());
         final String displayText = prefix + damageText + suffix;
 
         // ── 7b. Draw icon (rounds to int for pixel-aligned blitting) ──
@@ -411,17 +411,6 @@ public final class DamageNumberRenderer {
     }
 
     // ── Internal helpers ──────────────────────────────────────────────
-
-    /**
-     * Formats a float damage value for display.
-     * One decimal place for fractional damage, integer for whole numbers.
-     */
-    private static String formatDamage(final float damage) {
-        if (damage == (int) damage) {
-            return String.valueOf((int) damage);
-        }
-        return String.format("%.1f", damage);
-    }
 
     /**
      * Draws a small icon texture beside the damage number.

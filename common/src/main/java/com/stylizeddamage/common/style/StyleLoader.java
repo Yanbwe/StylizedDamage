@@ -196,11 +196,12 @@ public final class StyleLoader {
                 StyleDefaults.DEFAULT_BYPASS_DISPLAY_OPACITY);
         AnimationConfig animation = parseAnimation(json);
         DamageScaleConfig damageScale = parseDamageScale(json);
+        int decimalPlaces = getInt(json, "decimalPlaces", StyleDefaults.DEFAULT_DECIMAL_PLACES);
 
         return new Style(color, fontSize, fontStyle, shadow, outlineColor,
                 backgroundColor, sound, prefix, suffix, icon, iconPosition,
                 iconOffsetX, iconOffsetY, killText, bypassDisplayOpacity,
-                animation, damageScale);
+                animation, damageScale, decimalPlaces);
     }
 
     // ── Field helpers ───────────────────────────────────────────────
@@ -300,6 +301,21 @@ public final class StyleLoader {
         try {
             return elem.getAsBoolean();
         } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    private static int getInt(JsonObject json, String key, int defaultValue) {
+        if (!json.has(key)) {
+            return defaultValue;
+        }
+        JsonElement elem = json.get(key);
+        if (elem.isJsonNull() || !elem.isJsonPrimitive()) {
+            return defaultValue;
+        }
+        try {
+            return elem.getAsInt();
+        } catch (NumberFormatException e) {
             return defaultValue;
         }
     }

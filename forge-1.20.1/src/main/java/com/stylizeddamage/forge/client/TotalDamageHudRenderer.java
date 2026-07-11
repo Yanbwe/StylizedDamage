@@ -8,6 +8,7 @@ import com.stylizeddamage.common.config.TotalDamageConfig;
 import com.stylizeddamage.common.damage.DamageAccumulator;
 import com.stylizeddamage.common.damage.TrailEntry;
 import com.stylizeddamage.common.style.Style;
+import com.stylizeddamage.common.style.StyleDefaults;
 import com.stylizeddamage.common.style.StyleLoader;
 import com.stylizeddamage.common.api.StylizedDamageAPI;
 import com.stylizeddamage.common.style.color.ColorSource;
@@ -236,7 +237,9 @@ public final class TotalDamageHudRenderer {
 
         final String totalPrefix = totalStyle != null ? totalStyle.prefix() : "";
         final String totalSuffix = totalStyle != null ? totalStyle.suffix() : "";
-        final String totalText = totalPrefix + formatDamage(totalDamage) + totalSuffix;
+        final String totalText = totalPrefix
+                + Style.formatDamage(totalDamage, totalStyle != null ? totalStyle.decimalPlaces() : StyleDefaults.DEFAULT_DECIMAL_PLACES)
+                + totalSuffix;
 
         final int totalArgb = applyAlpha(
                 resolveArgb(totalStyle, now), totalAlpha);
@@ -271,7 +274,9 @@ public final class TotalDamageHudRenderer {
             final Style entryStyle = resolveStyle(tas.entry.styleName());
             final String entryPrefix = entryStyle != null ? entryStyle.prefix() : "";
             final String entrySuffix = entryStyle != null ? entryStyle.suffix() : "";
-            final String entryText = entryPrefix + formatDamage(tas.entry.damage()) + entrySuffix;
+            final String entryText = entryPrefix
+                    + Style.formatDamage(tas.entry.damage(), entryStyle != null ? entryStyle.decimalPlaces() : StyleDefaults.DEFAULT_DECIMAL_PLACES)
+                    + entrySuffix;
 
             final int entryArgb = applyAlpha(resolveArgb(entryStyle, now), trailAlpha);
             final float entryScale = entryStyle != null ? entryStyle.fontSize() : 1.0f;
@@ -661,17 +666,6 @@ public final class TotalDamageHudRenderer {
         double steps = totalDamage / 100.0;
         double raw = config.baseFontSize() + steps * config.sizeOffsetPerThousand();
         return Math.max(config.baseFontSize(), Math.min(raw, config.sizeOffsetMax()));
-    }
-
-    /**
-     * Formats a float damage value for display.
-     * One decimal place for fractional damage, integer for whole numbers.
-     */
-    private static String formatDamage(final float damage) {
-        if (damage == (int) damage) {
-            return String.valueOf((int) damage);
-        }
-        return String.format("%.1f", damage);
     }
 
     /**
